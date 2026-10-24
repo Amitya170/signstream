@@ -96,3 +96,42 @@ Powered by Dexie (IndexedDB):
 - **`reports`**: Error feedback records for maintainer review.
 - **`settings`**: User accessibility preferences, text scaling, and theme choices.
 - **WebCrypto AES-GCM**: Client-side encrypted export/import using password derivation (PBKDF2).
+
+---
+
+## 5. Commercial & Enterprise Production Systems
+
+### 5.1 ISL Grammatical Reordering Engine (`src/adapters/translation/islGrammarEngine.ts`)
+- **Linguistic Word-Order Normalization:** Converts English/Hindi (SVO) input into authentic ISL Topic-Comment / SOV syntax.
+- **Interrogatives at Clause End:** Interrogatives (`WHERE`, `WHAT`, `WHEN`, `HOW`) are placed at the end of the sign sequence with furrowed brow NMMs.
+- **Timeline-First Positioning:** Temporal markers (`TODAY`, `TOMORROW`, `YESTERDAY`) precede the clause.
+- **Grammatical Elision:** Copulas (*"is"*, *"are"*, *"was"*) and auxiliary do-support are elided per ISL linguistics.
+- **Non-Manual Markers (NMMs):** Embeds facial expressions (brow furrowing for WH-questions, brow raising for polar yes/no questions, head shake for negation) directly into keyframes.
+
+### 5.2 3D Anatomical Rig with 360° Orbit Camera (`src/adapters/signAnimation/threeAvatarAdapter.ts`)
+- **Dual-Phalanx Knuckles:** Each of the 5 fingers features independently articulated proximal and distal joint groups (MCP and PIP/DIP joints).
+- **Opposable Thumb Geometry:** Angled lateral thumb placement with cross-palm flexion.
+- **Respiratory & Blinking Kinematics:** Procedural breathing oscillation and eyelid blinking every ~3.8 seconds.
+- **Interactive 360° Orbit Camera:** Pointer drag rotates the avatar, pinch/wheel zooms, and the Compass button resets view.
+
+### 5.3 Temporal Continuous Gesture Classifier (`src/adapters/signRecognition/temporalGestureClassifier.ts`)
+- **45-Frame Rolling FIFO Buffer:** Analyzes velocity and acceleration deltas to segment signs into **Preparation**, **Active Stroke**, and **Retraction** phases.
+- **Dynamic Stroke Detection:** Identifies semantic stability plateaus to classify gestures during natural continuous signing.
+
+### 5.4 Commercial Vision HUD (`src/features/signToSpeech/VisionHUD.tsx`)
+- **Signing Space Silhouette Guide:** Targets the optimal torso framing for MediaPipe landmark extraction.
+- **Ambient Lux Meter:** Perceptual luminance calculation (ITU-R BT.601) warning when lighting is dim.
+- **Tracking Stability Gauge:** Real-time visual feedback on landmark stability.
+
+### 5.5 Audio Waveform Visualizer & Deaf Sound Alert Ring (`src/components/AudioWaveformVisualizer.tsx`)
+- **Real-Time Frequency Equalizer:** Live Web Audio API frequency spectrum analyzer showing mic input and decibel levels.
+- **Deaf Visual Alert Ring:** Subtle pulsing emerald border flash around the interface whenever speech/sound is detected.
+
+### 5.6 Enterprise Domain Packs (`src/data/lexicon/domainPacks.ts`)
+- Pre-calibrated vocabulary for **Healthcare & Hospitals**, **Banking & Finance Counters**, **Transit & Metro Stations**, and **Emergency & Safety**.
+
+### 5.7 1-Tap Emergency SOS Mode (`src/features/conversation/EmergencySOSModal.tsx`)
+- Full-screen red strobe distress beacon with SOS mobile haptic vibrations (`... --- ...`), continuous audio announcement loop, and an animated loop of the authentic ISL `EMERGENCY` sign.
+
+### 5.8 Official Session Transcript Audit Generator (`src/lib/sessionExporter.ts`)
+- Generates official, printable/PDF-exportable interaction logs with timestamps, speaker attributions, trust levels, ISL glosses, and dual signature blocks.
