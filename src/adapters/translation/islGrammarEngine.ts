@@ -7,8 +7,8 @@
  * 3. Interrogative WH-markers (Where, What, When, Who, Why, How) are positioned at the END of the clause.
  * 4. Polar (Yes/No) questions maintain sentence structure but carry raised eyebrows (NMM).
  * 5. Negation (NOT, NO, NEVER) is placed after the predicate accompanied by a head shake (NMM).
- * 6. Copulas ("is", "am", "are", "was", "were") and grammatical articles ("a", "an", "the") are elided.
- * 7. Modals/desires ("want", "need", "can") follow the object/theme ("WATER WANT").
+ * 6. Copulas ("is", "am", "are", "was", "were", "है", "था") and grammatical articles ("a", "an", "the") are elided.
+ * 7. Modals/desires ("want", "need", "can", "चाहिए") follow the object/theme ("WATER WANT").
  */
 
 export interface ISLGrammarAnalysis {
@@ -29,38 +29,46 @@ export interface ISLGrammarAnalysis {
 
 const TEMPORAL_WORDS = new Set([
   'today', 'tomorrow', 'yesterday', 'now', 'morning', 'afternoon', 'evening',
-  'night', 'daily', 'later', 'soon', 'always', 'never', 'already'
+  'night', 'daily', 'later', 'soon', 'always', 'never', 'already',
+  'आज', 'कल', 'परसों', 'अब', 'अभी', 'सुबह', 'दोपहर', 'शाम', 'रात', 'रोज़', 'हमेशा'
 ]);
 
 const WH_QUESTION_WORDS = new Set([
-  'where', 'what', 'when', 'who', 'whom', 'whose', 'why', 'how', 'which'
+  'where', 'what', 'when', 'who', 'whom', 'whose', 'why', 'how', 'which',
+  'कहाँ', 'क्या', 'कब', 'कौन', 'किसने', 'किसको', 'किसका', 'क्यों', 'कैसे', 'कितना', 'कितनी', 'कितने', 'कहा'
 ]);
 
 const NEGATION_WORDS = new Set([
   'not', 'no', 'never', 'neither', 'none', "don't", "doesn't", "didn't",
-  "won't", "cannot", "can't", "isn't", "aren't", "wasn't", "weren't"
+  "won't", "cannot", "can't", "isn't", "aren't", "wasn't", "weren't",
+  'नहीं', 'ना', 'मत', 'न'
 ]);
 
 const COPULA_AND_ARTICLES = new Set([
   'is', 'am', 'are', 'was', 'were', 'be', 'being', 'been',
   'do', 'does', 'did',
-  'a', 'an', 'the'
+  'a', 'an', 'the',
+  'है', 'हैं', 'हूँ', 'हो', 'था', 'थी', 'थे', 'हुआ', 'हुई', 'हुए'
 ]);
 
 const PREPOSITIONS_TO_ELIDE = new Set([
-  'to', 'at', 'in', 'on', 'of', 'for', 'with', 'by'
+  'to', 'at', 'in', 'on', 'of', 'for', 'with', 'by', 'from', 'into',
+  'का', 'की', 'के', 'में', 'से', 'को', 'पर', 'ने', 'तक', 'लिए', 'द्वारा'
 ]);
 
 const MODAL_DESIRE_WORDS = new Set([
-  'want', 'wants', 'wanted', 'need', 'needs', 'needed', 'can', 'could', 'must', 'should'
+  'want', 'wants', 'wanted', 'need', 'needs', 'needed', 'can', 'could', 'must', 'should',
+  'चाहिए', 'चाहिएँ', 'सकता', 'सकती', 'सकते', 'पड़ेगा', 'पड़ेगी'
 ]);
 
 const PRONOUNS = new Set([
-  'i', 'me', 'my', 'you', 'your', 'he', 'him', 'his', 'she', 'her', 'we', 'us', 'they', 'them'
+  'i', 'me', 'my', 'you', 'your', 'he', 'him', 'his', 'she', 'her', 'we', 'us', 'they', 'them',
+  'मैं', 'मुझे', 'मेरा', 'मेरी', 'मेरे', 'हम', 'हमें', 'हमारा', 'आप', 'आपका', 'आपकी', 'तुम', 'तुम्हारा',
+  'वह', 'उसका', 'उसकी', 'यह', 'इसका', 'इसकी', 'वे', 'उनका'
 ]);
 
 /**
- * Reorders a spoken/written English or transliterated Hindi sentence into authentic ISL syntax.
+ * Reorders a spoken/written English or Hindi sentence into authentic ISL syntax.
  */
 export function parseAndReorderISL(sentence: string): ISLGrammarAnalysis {
   const trimmed = sentence.trim();
@@ -89,7 +97,13 @@ export function parseAndReorderISL(sentence: string): ISLGrammarAnalysis {
     'good evening',
     'good night',
     'welcome',
-    'you are welcome'
+    'you are welcome',
+    'धन्यवाद',
+    'शुक्रिया',
+    'आप कैसे हैं',
+    'नमस्ते',
+    'शुभ प्रभात',
+    'सुप्रभात'
   ]);
 
   if (CONVERSATIONAL_IDIOMS.has(cleanInput)) {
@@ -153,11 +167,12 @@ export function parseAndReorderISL(sentence: string): ISLGrammarAnalysis {
 
     // 5. Identify Modals and desires
     if (MODAL_DESIRE_WORDS.has(token)) {
-      modalTokens.push(token.replace(/s$|ed$/, '')); // normalize 'wants' -> 'want'
+      const normalized = token.replace(/s$|ed$/, '');
+      modalTokens.push(normalized);
       continue;
     }
 
-    // 6. Elide weak prepositions unless critical
+    // 6. Elide weak prepositions/postpositions unless critical
     if (PREPOSITIONS_TO_ELIDE.has(token) && idx > 0) {
       omittedTokens.push(token);
       continue;
@@ -170,8 +185,12 @@ export function parseAndReorderISL(sentence: string): ISLGrammarAnalysis {
     }
 
     // 8. Distinguish verbs vs objects/nouns heuristically
-    // If we already have subjects or objects, place in verb or object
-    if (['help', 'come', 'go', 'eat', 'drink', 'give', 'take', 'call', 'see', 'meet', 'know', 'understand', 'stop'].includes(token)) {
+    const KNOWN_VERBS = [
+      'help', 'come', 'go', 'eat', 'drink', 'give', 'take', 'call', 'see', 'meet', 'know', 'understand', 'stop', 'work', 'learn', 'rest',
+      'मदद', 'आना', 'जाना', 'खाना', 'पीना', 'देना', 'लेना', 'बुलाना', 'देखना', 'मिलना', 'जानना', 'समझना', 'रुकना', 'काम'
+    ];
+
+    if (KNOWN_VERBS.includes(token)) {
       verbTokens.push(token);
     } else {
       objectTokens.push(token);

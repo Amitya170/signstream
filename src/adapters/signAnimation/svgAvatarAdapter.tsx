@@ -208,13 +208,35 @@ export const SvgAvatarAdapter: React.FC<SvgAvatarProps> = ({
         {/* Palm Center */}
         <circle cx="0" cy="0" r="16" fill={skinTone} stroke="#0f172a" strokeWidth="2.5" />
         {/* Opposable Thumb */}
-        <ellipse cx="-12" cy="4" rx="8" ry="5" fill={skinTone} stroke="#0f172a" strokeWidth="2" transform={`rotate(${ -30 - (pose.leftHand.spread ?? 0.1) * 20 })`} />
+        {(() => {
+          const tCurl = pose.leftHand.curl[0] ?? 0.1;
+          const isFolded = tCurl > 0.45;
+          return isFolded ? (
+            <ellipse cx="2" cy="2" rx="7" ry="5" fill={skinTone} stroke="#0f172a" strokeWidth="2" transform="rotate(45)" />
+          ) : (
+            <ellipse cx="-13" cy="4" rx="9" ry="5.5" fill={skinTone} stroke="#0f172a" strokeWidth="2" transform={`rotate(${ -35 - (pose.leftHand.spread ?? 0.1) * 20 })`} />
+          );
+        })()}
         {/* 4 Articulated Splayed Fingers */}
         {[-9, -3, 3, 9].map((offset, idx) => {
           const curl = pose.leftHand.curl[idx + 1] ?? 0;
           const spread = pose.leftHand.spread ?? 0.1;
           const spreadAngles = [-0.25, -0.08, 0.08, 0.25];
-          const fingerLen = 17 - curl * 11;
+          const isCurled = curl > 0.45;
+          if (isCurled) {
+            return (
+              <circle
+                key={idx}
+                cx={offset}
+                cy={-7 + (curl - 0.4) * 6}
+                r="4"
+                fill={skinTone}
+                stroke="#0f172a"
+                strokeWidth="2"
+              />
+            );
+          }
+          const fingerLen = 19 - curl * 8;
           const angle = spreadAngles[idx] * (0.4 + spread * 1.4);
           const targetX = offset + Math.sin(angle) * fingerLen;
           const targetY = -10 - Math.cos(angle) * fingerLen;
@@ -257,13 +279,35 @@ export const SvgAvatarAdapter: React.FC<SvgAvatarProps> = ({
         {/* Palm Center */}
         <circle cx="0" cy="0" r="16" fill={skinTone} stroke="#0f172a" strokeWidth="2.5" />
         {/* Opposable Thumb */}
-        <ellipse cx="12" cy="4" rx="8" ry="5" fill={skinTone} stroke="#0f172a" strokeWidth="2" transform={`rotate(${ 30 + (pose.rightHand.spread ?? 0.1) * 20 })`} />
+        {(() => {
+          const tCurl = pose.rightHand.curl[0] ?? 0.1;
+          const isFolded = tCurl > 0.45;
+          return isFolded ? (
+            <ellipse cx="-2" cy="2" rx="7" ry="5" fill={skinTone} stroke="#0f172a" strokeWidth="2" transform="rotate(-45)" />
+          ) : (
+            <ellipse cx="13" cy="4" rx="9" ry="5.5" fill={skinTone} stroke="#0f172a" strokeWidth="2" transform={`rotate(${ 35 + (pose.rightHand.spread ?? 0.1) * 20 })`} />
+          );
+        })()}
         {/* 4 Articulated Splayed Fingers */}
         {[-9, -3, 3, 9].map((offset, idx) => {
           const curl = pose.rightHand.curl[idx + 1] ?? 0;
           const spread = pose.rightHand.spread ?? 0.1;
           const spreadAngles = [-0.25, -0.08, 0.08, 0.25];
-          const fingerLen = 17 - curl * 11;
+          const isCurled = curl > 0.45;
+          if (isCurled) {
+            return (
+              <circle
+                key={idx}
+                cx={offset}
+                cy={-7 + (curl - 0.4) * 6}
+                r="4"
+                fill={skinTone}
+                stroke="#0f172a"
+                strokeWidth="2"
+              />
+            );
+          }
+          const fingerLen = 19 - curl * 8;
           const angle = spreadAngles[idx] * (0.4 + spread * 1.4);
           const targetX = offset + Math.sin(angle) * fingerLen;
           const targetY = -10 - Math.cos(angle) * fingerLen;

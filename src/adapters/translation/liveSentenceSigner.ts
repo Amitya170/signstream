@@ -33,7 +33,47 @@ export interface LiveSentencePackage {
 }
 
 // Global phrase to gloss mapping for rapid lookup
-const PHRASE_GLOSS_DICT: Record<string, string> = {
+export const PHRASE_GLOSS_DICT: Record<string, string> = {
+  // Core Pronouns & People
+  i: 'I',
+  me: 'I',
+  my: 'I',
+  myself: 'I',
+  we: 'I',
+  us: 'I',
+  you: 'YOU',
+  your: 'YOU',
+  yours: 'YOU',
+  he: 'YOU',
+  she: 'YOU',
+  they: 'YOU',
+  it: 'YOU',
+
+  // Modals & Needs
+  want: 'WANT',
+  wants: 'WANT',
+  need: 'WANT',
+  needs: 'WANT',
+  require: 'WANT',
+  requires: 'WANT',
+  can: 'CAN',
+  could: 'CAN',
+  able: 'CAN',
+  possible: 'CAN',
+
+  // Core Actions
+  come: 'COME',
+  arrive: 'COME',
+  go: 'GO',
+  leave: 'GO',
+  depart: 'GO',
+  know: 'KNOW',
+  aware: 'KNOW',
+  'dont know': 'DONT-KNOW',
+  "don't know": 'DONT-KNOW',
+  call: 'CALL',
+  phone: 'CALL',
+
   // Greetings & Core Social
   namaste: 'NAMASTE',
   hello: 'NAMASTE',
@@ -41,11 +81,18 @@ const PHRASE_GLOSS_DICT: Record<string, string> = {
   greetings: 'NAMASTE',
   'thank you': 'THANK-YOU',
   thanks: 'THANK-YOU',
+  thankyou: 'THANK-YOU',
   please: 'PLEASE',
+  pls: 'PLEASE',
   sorry: 'SORRY',
+  apologies: 'SORRY',
   welcome: 'WELCOME',
   yes: 'YES',
+  yeah: 'YES',
+  ok: 'YES',
   no: 'NO',
+  nope: 'NO',
+  not: 'NO',
   good: 'GOOD',
   fine: 'GOOD',
   bad: 'BAD',
@@ -68,17 +115,27 @@ const PHRASE_GLOSS_DICT: Record<string, string> = {
 
   // Medical & Emergency
   doctor: 'DOCTOR',
+  physician: 'DOCTOR',
+  dr: 'DOCTOR',
   hospital: 'HOSPITAL',
+  clinic: 'HOSPITAL',
   medicine: 'MEDICINE',
   pill: 'MEDICINE',
   tablet: 'MEDICINE',
   fever: 'FEVER',
+  temperature: 'FEVER',
   pain: 'PAIN',
+  hurt: 'PAIN',
   ambulance: 'AMBULANCE',
   emergency: 'EMERGENCY',
   urgent: 'EMERGENCY',
   rest: 'REST',
   safe: 'SAFE',
+  sick: 'SICK',
+  ill: 'SICK',
+  unwell: 'SICK',
+  police: 'POLICE',
+  cop: 'POLICE',
 
   // Transit & Travel
   train: 'TRAIN',
@@ -86,6 +143,8 @@ const PHRASE_GLOSS_DICT: Record<string, string> = {
   metro: 'METRO',
   bus: 'BUS',
   ticket: 'TICKET',
+  station: 'STATION',
+  platform: 'STATION',
 
   // Questions & Interrogatives
   where: 'WHERE',
@@ -93,6 +152,9 @@ const PHRASE_GLOSS_DICT: Record<string, string> = {
   when: 'WHEN',
   who: 'WHO',
   why: 'WHY',
+  'how much': 'HOW-MUCH',
+  cost: 'HOW-MUCH',
+  price: 'HOW-MUCH',
 
   // Banking & Financial
   money: 'MONEY',
@@ -100,6 +162,7 @@ const PHRASE_GLOSS_DICT: Record<string, string> = {
   rupee: 'MONEY',
   bank: 'BANK',
   card: 'CARD',
+  atm: 'CARD',
   signature: 'SIGNATURE',
 
   // Family & People
@@ -152,11 +215,51 @@ const PHRASE_GLOSS_DICT: Record<string, string> = {
   hundred: 'NUM-HUNDRED',
 
   // Hindi mappings
+  मैं: 'I',
+  मुझे: 'I',
+  मेरा: 'I',
+  मेरी: 'I',
+  मेरे: 'I',
+  हम: 'I',
+  हमें: 'I',
+  आप: 'YOU',
+  आपका: 'YOU',
+  तुम: 'YOU',
+  तुम्हारा: 'YOU',
+  चाहिए: 'WANT',
+  चाहिएँ: 'WANT',
+  सकता: 'CAN',
+  सकती: 'CAN',
+  सकते: 'CAN',
+  आना: 'COME',
+  आओ: 'COME',
+  आइए: 'COME',
+  जाना: 'GO',
+  जाओ: 'GO',
+  जाइए: 'GO',
+  जानना: 'KNOW',
+  मालूम: 'KNOW',
+  पता: 'KNOW',
+  'नहीं मालूम': 'DONT-KNOW',
+  'पता नहीं': 'DONT-KNOW',
+  कॉल: 'CALL',
+  फ़ोन: 'CALL',
+  पुलिस: 'POLICE',
+  स्टेशन: 'STATION',
+  प्लेटफार्म: 'STATION',
+  कितना: 'HOW-MUCH',
+  कीमत: 'HOW-MUCH',
+  दाम: 'HOW-MUCH',
+  बीमार: 'SICK',
+  अस्वस्थ: 'SICK',
+
   नमस्ते: 'NAMASTE',
+  नमस्कार: 'NAMASTE',
   धन्यवाद: 'THANK-YOU',
   शुक्रिया: 'THANK-YOU',
   कृपया: 'PLEASE',
   माफ़: 'SORRY',
+  माफी: 'SORRY',
   स्वागत: 'WELCOME',
   हाँ: 'YES',
   नहीं: 'NO',
@@ -214,7 +317,20 @@ const PHRASE_GLOSS_DICT: Record<string, string> = {
   आज: 'TODAY',
   कल: 'TOMORROW',
   खुश: 'HAPPY',
-  उदास: 'SAD'
+  उदास: 'SAD',
+  'आप कैसे हैं': 'HOW-ARE-YOU',
+  'शुभ प्रभात': 'GOOD-MORNING',
+  सुप्रभात: 'GOOD-MORNING'
+};
+
+// Devanagari transliteration mapping for fingerspelling fallback
+const DEVANAGARI_TO_LATIN: Record<string, string> = {
+  'अ': 'A', 'आ': 'A', 'इ': 'I', 'ई': 'I', 'उ': 'U', 'ऊ': 'U', 'ए': 'E', 'ऐ': 'A', 'ओ': 'O', 'औ': 'O',
+  'क': 'K', 'ख': 'K', 'ग': 'G', 'घ': 'G', 'च': 'C', 'छ': 'C', 'ज': 'J', 'झ': 'J',
+  'ट': 'T', 'ठ': 'T', 'ड': 'D', 'ढ': 'D', 'ण': 'N', 'त': 'T', 'थ': 'T', 'द': 'D', 'ध': 'D', 'न': 'N',
+  'प': 'P', 'फ': 'P', 'ब': 'B', 'भ': 'B', 'म': 'M', 'य': 'Y', 'र': 'R', 'ल': 'L', 'व': 'V',
+  'श': 'S', 'ष': 'S', 'स': 'S', 'ह': 'H',
+  '१': '1', '२': '2', '३': '3', '४': '4', '५': '5', '६': '6', '७': '7', '८': '8', '९': '9', '०': '0'
 };
 
 export class LiveSentenceSigner {
@@ -244,7 +360,7 @@ export class LiveSentenceSigner {
 
     const words: SentenceSignWord[] = [];
     let currentTimelineMs = 0;
-    const transitionGapMs = 160; // 160ms smooth co-articulation blend between signs
+    const transitionGapMs = 180; // 180ms smooth co-articulation blend between signs
 
     let i = 0;
     while (i < tokens.length) {
@@ -295,25 +411,34 @@ export class LiveSentenceSigner {
       }
 
       // C. Authentic ISL Two-Handed Manual Fingerspelling for unseen terms / proper nouns
-      const letters = single.toUpperCase().split('');
       const matchedLetterClips: SignClip[] = [];
       const letterChars: string[] = [];
 
-      for (const char of letters) {
-        if (/[A-Z]/.test(char)) {
-          const letterClip = lexiconManager.findClipByGloss(`LETTER-${char}`);
+      // Extract letters (support Latin A-Z and Devanagari transliteration)
+      const rawChars = single.split('');
+      for (const ch of rawChars) {
+        const upper = ch.toUpperCase();
+        if (/[A-Z]/.test(upper)) {
+          const letterClip = lexiconManager.findClipByGloss(`LETTER-${upper}`);
           if (letterClip) {
             matchedLetterClips.push(letterClip);
-            letterChars.push(char);
+            letterChars.push(upper);
           }
-        } else if (/[0-9]/.test(char)) {
-          const numGloss = PHRASE_GLOSS_DICT[char];
+        } else if (/[0-9]/.test(ch)) {
+          const numGloss = PHRASE_GLOSS_DICT[ch];
           if (numGloss) {
             const numClip = lexiconManager.findClipByGloss(numGloss);
             if (numClip) {
               matchedLetterClips.push(numClip);
-              letterChars.push(char);
+              letterChars.push(ch);
             }
+          }
+        } else if (DEVANAGARI_TO_LATIN[ch]) {
+          const lat = DEVANAGARI_TO_LATIN[ch];
+          const letterClip = lexiconManager.findClipByGloss(`LETTER-${lat}`);
+          if (letterClip) {
+            matchedLetterClips.push(letterClip);
+            letterChars.push(lat);
           }
         }
       }
@@ -340,8 +465,8 @@ export class LiveSentenceSigner {
 
         const fsCompositeClip: SignClip = {
           id: `fs-${single}-${Date.now()}`,
-          version: '1.0.0',
-          gloss: `SPELL:${single.toUpperCase()}`,
+          version: '2.0.0',
+          gloss: `SPELL:${letterChars.join('')}`,
           labels: { en: `Fingerspell "${single}"`, hi: `अक्षर वर्तनी: "${single}"` },
           durationMs: fsDuration,
           trustLevel: 'VERIFIED',
@@ -357,7 +482,7 @@ export class LiveSentenceSigner {
         words.push({
           id: `word-${words.length}-${Date.now()}`,
           originalWord: single,
-          islGloss: `SPELL:${single.toUpperCase()}`,
+          islGloss: `SPELL:${letterChars.join('')}`,
           startTimeMs: currentTimelineMs,
           durationMs: fsDuration,
           isFingerspelled: true,
@@ -407,7 +532,7 @@ export class LiveSentenceSigner {
 
     const masterCompositeClip: SignClip = {
       id: `live-sentence-${Date.now()}`,
-      version: '1.0.0',
+      version: '2.0.0',
       gloss: glossChain || 'EMPTY',
       labels: {
         en: `Live Sentence: "${trimmed}"`,
@@ -441,7 +566,7 @@ export class LiveSentenceSigner {
   public getActiveWordAtTime(pkg: LiveSentencePackage, timeMs: number): SentenceSignWord | null {
     if (!pkg.words.length) return null;
     for (const w of pkg.words) {
-      if (timeMs >= w.startTimeMs && timeMs < w.startTimeMs + w.durationMs) {
+      if (timeMs >= w.startTimeMs && timeMs < w.startTimeMs + w.durationMs + 180) {
         return w;
       }
     }

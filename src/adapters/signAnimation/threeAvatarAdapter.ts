@@ -592,6 +592,11 @@ export class ThreeAvatarRig {
       pose.leftArm.shoulderRotation[2]
     );
     this.leftElbowGroup.rotation.set(pose.leftArm.elbowAngle, 0, pose.leftArm.forearmRoll);
+    this.leftWristGroup.position.set(
+      pose.leftHand.position[0] * 0.08,
+      -0.26 + pose.leftHand.position[1] * 0.06,
+      pose.leftHand.position[2] * 0.06
+    );
     this.leftWristGroup.rotation.set(
       pose.leftHand.rotation[0],
       pose.leftHand.rotation[1],
@@ -626,6 +631,11 @@ export class ThreeAvatarRig {
       pose.rightArm.shoulderRotation[2]
     );
     this.rightElbowGroup.rotation.set(pose.rightArm.elbowAngle, 0, pose.rightArm.forearmRoll);
+    this.rightWristGroup.position.set(
+      pose.rightHand.position[0] * 0.08,
+      -0.26 + pose.rightHand.position[1] * 0.06,
+      pose.rightHand.position[2] * 0.06
+    );
     this.rightWristGroup.rotation.set(
       pose.rightHand.rotation[0],
       pose.rightHand.rotation[1],

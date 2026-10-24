@@ -59,6 +59,10 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
   const animFrameRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number | null>(null);
 
+  const onTimeUpdateRef = useRef(onTimeUpdate);
+  onTimeUpdateRef.current = onTimeUpdate;
+  const currentTimeMsRef = useRef<number>(0);
+
   // Initialize Three.js Rig
   useEffect(() => {
     if (renderMode !== 'three' || !threeContainerRef.current) return;
@@ -99,24 +103,22 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
     lastTimestampRef.current = timestamp;
 
     if (clip && isPlaying) {
-      setCurrentTimeMs((prevTime) => {
-        const nextTime = prevTime + delta;
-        onTimeUpdate?.(nextTime);
-        if (nextTime >= clip.durationMs) {
-          if (isLooping) {
-            onTimeUpdate?.(0);
-            return 0;
-          } else {
-            setIsPlaying(false);
-            return clip.durationMs;
-          }
+      let nextTime = currentTimeMsRef.current + delta;
+      if (nextTime >= clip.durationMs) {
+        if (isLooping) {
+          nextTime = 0;
+        } else {
+          nextTime = clip.durationMs;
+          setIsPlaying(false);
         }
-        return nextTime;
-      });
+      }
+      currentTimeMsRef.current = nextTime;
+      setCurrentTimeMs(nextTime);
+      onTimeUpdateRef.current?.(nextTime);
     }
 
     animFrameRef.current = requestAnimationFrame(animate);
-  }, [clip, isPlaying, isLooping, speed, onTimeUpdate]);
+  }, [clip, isPlaying, isLooping, speed]);
 
   useEffect(() => {
     lastTimestampRef.current = null;
@@ -129,10 +131,11 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
   // React to external seek requests
   useEffect(() => {
     if (seekTimeMs !== undefined && seekTimeMs !== null) {
+      currentTimeMsRef.current = seekTimeMs;
       setCurrentTimeMs(seekTimeMs);
-      onTimeUpdate?.(seekTimeMs);
+      onTimeUpdateRef.current?.(seekTimeMs);
     }
-  }, [seekTimeMs, onTimeUpdate]);
+  }, [seekTimeMs]);
 
   // Update current pose based on currentTimeMs
   useEffect(() => {
@@ -152,6 +155,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
 
   // Reset playhead when clip changes
   useEffect(() => {
+    currentTimeMsRef.current = 0;
     setCurrentTimeMs(0);
     setIsPlaying(true);
   }, [clip?.id]);
@@ -159,12 +163,17 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
   const handleStepForward = () => {
     if (!clip) return;
     setIsPlaying(false);
-    setCurrentTimeMs((prev) => Math.min(clip.durationMs, prev + 120));
+    const stepped = Math.min(clip.durationMs, currentTimeMsRef.current + 120);
+    currentTimeMsRef.current = stepped;
+    setCurrentTimeMs(stepped);
+    onTimeUpdateRef.current?.(stepped);
   };
 
   const handleReplay = () => {
+    currentTimeMsRef.current = 0;
     setCurrentTimeMs(0);
     setIsPlaying(true);
+    onTimeUpdateRef.current?.(0);
   };
 
   const speedOptions = [0.5, 0.75, 1.0, 1.25, 1.5];

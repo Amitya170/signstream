@@ -48,6 +48,8 @@ export const SpeechToSignView: React.FC = () => {
   // Live Continuous Sentence Stream & Word Teleprompter
   const [sentencePackage, setSentencePackage] = useState<LiveSentencePackage | null>(null);
   const [activeWordId, setActiveWordId] = useState<string | null>(null);
+  const activeWordIdRef = useRef<string | null>(null);
+  activeWordIdRef.current = activeWordId;
   const [seekTargetTimeMs, setSeekTargetTimeMs] = useState<number | null>(null);
 
   // Active Microphone Audio Stream for Visualizer
@@ -119,11 +121,12 @@ export const SpeechToSignView: React.FC = () => {
     (currentTimeMs: number) => {
       if (!sentencePackage || !sentencePackage.words.length) return;
       const currentWord = liveSentenceSigner.getActiveWordAtTime(sentencePackage, currentTimeMs);
-      if (currentWord && currentWord.id !== activeWordId) {
+      if (currentWord && currentWord.id !== activeWordIdRef.current) {
+        activeWordIdRef.current = currentWord.id;
         setActiveWordId(currentWord.id);
       }
     },
-    [sentencePackage, activeWordId]
+    [sentencePackage]
   );
 
   const handleWordChipClick = (word: SentenceSignWord) => {

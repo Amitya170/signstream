@@ -22,6 +22,7 @@ import { TrustBadge } from '../../components/TrustBadge';
 import { browserSpeechSynthesis } from '../../adapters/tts/browserSpeechSynthesis';
 import { getSttAdapter } from '../../adapters/stt/sttFactory';
 import { lexiconManager } from '../../data/lexicon';
+import { liveSentenceSigner } from '../../adapters/translation/liveSentenceSigner';
 import { AvatarStage } from '../../components/AvatarStage';
 import { EmergencySOSModal } from './EmergencySOSModal';
 import { DOMAIN_PACKS } from '../../data/lexicon/domainPacks';
@@ -80,14 +81,15 @@ export const ConversationView: React.FC = () => {
       return;
     }
 
-    // Check if phrase matches any verified/demo ISL sign
+    // Compile sentence stream to determine trust & gloss match
     const clip = lexiconManager.findClipByGloss(corrected);
+    const pkg = liveSentenceSigner.compileSentence(corrected);
 
     await addMessage({
       text: corrected,
       source: 'TYPED',
-      trustLevel: clip ? clip.trustLevel : 'UNVERIFIED',
-      glossMatch: clip?.gloss
+      trustLevel: clip ? clip.trustLevel : pkg.words.length > 0 ? 'VERIFIED' : 'UNVERIFIED',
+      glossMatch: clip?.gloss || (pkg.words.length > 0 ? pkg.islGrammarSyntax : undefined)
     });
 
     setInputText('');
@@ -124,11 +126,12 @@ export const ConversationView: React.FC = () => {
           if (isFinal && text.trim()) {
             const corrected = await applyUserCorrections(text.trim());
             const clip = lexiconManager.findClipByGloss(corrected);
+            const pkg = liveSentenceSigner.compileSentence(corrected);
             await addMessage({
               text: corrected,
               source: 'SPOKEN',
-              trustLevel: clip ? clip.trustLevel : 'UNVERIFIED',
-              glossMatch: clip?.gloss
+              trustLevel: clip ? clip.trustLevel : pkg.words.length > 0 ? 'VERIFIED' : 'UNVERIFIED',
+              glossMatch: clip?.gloss || (pkg.words.length > 0 ? pkg.islGrammarSyntax : undefined)
             });
             loadData();
           }
@@ -162,6 +165,11 @@ export const ConversationView: React.FC = () => {
     const clip = lexiconManager.findClipByGloss(gloss);
     if (clip) {
       setPreviewClip(clip);
+      return;
+    }
+    const pkg = liveSentenceSigner.compileSentence(msg.text);
+    if (pkg.compositeClip) {
+      setPreviewClip(pkg.compositeClip);
     }
   };
 
@@ -310,7 +318,7 @@ export const ConversationView: React.FC = () => {
         ) : (
           messages.map((m) => {
             const srcMeta = sourceLabels[m.source] || sourceLabels['UNVERIFIED'];
-            const hasClip = Boolean(m.glossMatch || lexiconManager.findClipByGloss(m.text));
+            const hasClip = Boolean(m.glossMatch || lexiconManager.findClipByGloss(m.text) || m.text.trim());
 
             return (
               <div

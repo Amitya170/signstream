@@ -38,4 +38,19 @@ describe('Live Continuous Sentence Signer & Teleprompter Sync', () => {
     const activeAtSecond = liveSentenceSigner.getActiveWordAtTime(pkg, secondWord.startTimeMs + 50);
     expect(activeAtSecond?.id).toBe(secondWord.id);
   });
+
+  it('compiles Hindi conversational sentences into authentic ISL signs', () => {
+    const pkg = liveSentenceSigner.compileSentence('मुझे डॉक्टर चाहिए');
+    expect(pkg.words.length).toBeGreaterThanOrEqual(2);
+    const glosses = pkg.words.map((w) => w.islGloss);
+    expect(glosses).toContain('DOCTOR');
+    expect(glosses).toContain('WANT');
+  });
+
+  it('supports distinct numerals and fingerspelled manual alphabet', () => {
+    const pkgNum = liveSentenceSigner.compileSentence('5 10');
+    expect(pkgNum.words.length).toBe(2);
+    expect(pkgNum.words[0].islGloss).toBe('NUM-FIVE');
+    expect(pkgNum.words[1].islGloss).toBe('NUM-TEN');
+  });
 });
