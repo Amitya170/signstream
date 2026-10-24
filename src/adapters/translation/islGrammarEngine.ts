@@ -79,6 +79,35 @@ export function parseAndReorderISL(sentence: string): ISLGrammarAnalysis {
   // Detect punctuation-based interrogative
   const hasQuestionMark = trimmed.endsWith('?');
   const cleanInput = trimmed.replace(/[.,/#!$%^&*;:{}=\-_`~()?]/g, '').toLowerCase();
+
+  // Preserve authentic ISL idiomatic conversational formulas as single atomic units
+  const CONVERSATIONAL_IDIOMS = new Set([
+    'thank you',
+    'how are you',
+    'good morning',
+    'good afternoon',
+    'good evening',
+    'good night',
+    'welcome',
+    'you are welcome'
+  ]);
+
+  if (CONVERSATIONAL_IDIOMS.has(cleanInput)) {
+    return {
+      originalText: trimmed,
+      reorderedTokens: [cleanInput],
+      omittedTokens: [],
+      isInterrogative: hasQuestionMark,
+      questionType: hasQuestionMark ? 'POLAR_QUESTION' : undefined,
+      isNegated: false,
+      nonManualMarkers: {
+        browState: hasQuestionMark ? 'raised' : 'neutral',
+        headTilt: 'neutral'
+      },
+      explanation: 'Preserved authentic ISL idiomatic conversational formula.'
+    };
+  }
+
   const rawTokens = cleanInput.split(/\s+/).filter(Boolean);
 
   const omittedTokens: string[] = [];

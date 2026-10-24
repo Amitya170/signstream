@@ -23,7 +23,7 @@ test.describe('Project SignStream E2E Smoke Tests', () => {
     await page.getByRole('button', { name: /translate/i }).click();
 
     // Avatar stage should display gloss
-    await expect(page.getByText('THANK-YOU')).toBeVisible();
+    await expect(page.getByText('THANK-YOU').first()).toBeVisible();
     await expect(page.getByText(/VERIFIED|DEMO/).first()).toBeVisible();
     await expect(page.getByText(/Full ISL Lexicon Match|ISL Translation complete/i).first()).toBeVisible();
   });

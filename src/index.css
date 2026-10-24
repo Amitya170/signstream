@@ -106,3 +106,20 @@ body {
 .skip-link:focus {
   top: 1rem;
 }
+
+/* Custom scrollbar utility */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Glassmorphism panel styles */
+.obsidian-card {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(51, 65, 85, 0.45);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+}

@@ -7,7 +7,10 @@ import {
   Repeat,
   Gauge,
   Layers,
-  Compass
+  Compass,
+  Camera,
+  Smile,
+  Hand
 } from 'lucide-react';
 import { SignClip } from '../core/types';
 import {
@@ -15,7 +18,7 @@ import {
   getDefaultPose,
   InterpolatedPose
 } from '../adapters/signAnimation/SignAnimatorAdapter';
-import { ThreeAvatarRig } from '../adapters/signAnimation/threeAvatarAdapter';
+import { ThreeAvatarRig, CameraPreset } from '../adapters/signAnimation/threeAvatarAdapter';
 import { SvgAvatarAdapter } from '../adapters/signAnimation/svgAvatarAdapter';
 import { TrustBadge } from './TrustBadge';
 
@@ -27,6 +30,8 @@ interface AvatarStageProps {
   backgroundColor?: string;
   showCaption?: boolean;
   className?: string;
+  onTimeUpdate?: (currentTimeMs: number) => void;
+  seekTimeMs?: number | null;
 }
 
 export const AvatarStage: React.FC<AvatarStageProps> = ({
@@ -36,7 +41,9 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
   outfitColor = '#0d9488',
   backgroundColor = '#0b0f19',
   showCaption = true,
-  className = ''
+  className = '',
+  onTimeUpdate,
+  seekTimeMs
 }) => {
   const threeContainerRef = useRef<HTMLDivElement>(null);
   const rigRef = useRef<ThreeAvatarRig | null>(null);
@@ -47,6 +54,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
   const [currentTimeMs, setCurrentTimeMs] = useState<number>(0);
   const [currentPose, setCurrentPose] = useState<InterpolatedPose>(getDefaultPose());
   const [renderMode, setRenderMode] = useState<'three' | 'svg'>(mode);
+  const [cameraPreset, setCameraPreset] = useState<CameraPreset>('CHEST_SIGNING');
 
   const animFrameRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number | null>(null);
@@ -93,8 +101,10 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
     if (clip && isPlaying) {
       setCurrentTimeMs((prevTime) => {
         const nextTime = prevTime + delta;
+        onTimeUpdate?.(nextTime);
         if (nextTime >= clip.durationMs) {
           if (isLooping) {
+            onTimeUpdate?.(0);
             return 0;
           } else {
             setIsPlaying(false);
@@ -106,7 +116,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
     }
 
     animFrameRef.current = requestAnimationFrame(animate);
-  }, [clip, isPlaying, isLooping, speed]);
+  }, [clip, isPlaying, isLooping, speed, onTimeUpdate]);
 
   useEffect(() => {
     lastTimestampRef.current = null;
@@ -115,6 +125,14 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
   }, [animate]);
+
+  // React to external seek requests
+  useEffect(() => {
+    if (seekTimeMs !== undefined && seekTimeMs !== null) {
+      setCurrentTimeMs(seekTimeMs);
+      onTimeUpdate?.(seekTimeMs);
+    }
+  }, [seekTimeMs, onTimeUpdate]);
 
   // Update current pose based on currentTimeMs
   useEffect(() => {
@@ -200,9 +218,65 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
         )}
 
         {renderMode === 'three' && (
-          <div className="absolute top-12 right-3 pointer-events-none text-[11px] font-semibold text-slate-400 bg-slate-900/80 backdrop-blur-md px-2 py-0.5 rounded border border-slate-700/60 shadow">
-            360° Drag & Zoom
-          </div>
+          <>
+            {/* Camera Perspective Presets */}
+            <div className="absolute top-12 left-3 flex items-center gap-1 bg-slate-950/85 backdrop-blur-md p-1 rounded-xl border border-slate-800 text-[11px] shadow-lg">
+              <button
+                type="button"
+                onClick={() => {
+                  setCameraPreset('CHEST_SIGNING');
+                  rigRef.current?.applyCameraPreset('CHEST_SIGNING');
+                }}
+                className={`px-2 py-1 rounded-lg font-semibold flex items-center gap-1 transition-colors ${
+                  cameraPreset === 'CHEST_SIGNING'
+                    ? 'bg-brand-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Chest & Signing Space"
+              >
+                <Camera className="w-3 h-3" />
+                <span>Sign</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCameraPreset('HANDS_FOCUS');
+                  rigRef.current?.applyCameraPreset('HANDS_FOCUS');
+                }}
+                className={`px-2 py-1 rounded-lg font-semibold flex items-center gap-1 transition-colors ${
+                  cameraPreset === 'HANDS_FOCUS'
+                    ? 'bg-brand-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Hands Zoom"
+              >
+                <Hand className="w-3 h-3" />
+                <span>Hands</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCameraPreset('FACE_NMM');
+                  rigRef.current?.applyCameraPreset('FACE_NMM');
+                }}
+                className={`px-2 py-1 rounded-lg font-semibold flex items-center gap-1 transition-colors ${
+                  cameraPreset === 'FACE_NMM'
+                    ? 'bg-brand-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Face & Non-Manual Markers"
+              >
+                <Smile className="w-3 h-3" />
+                <span>Face</span>
+              </button>
+            </div>
+
+            <div className="absolute top-12 right-3 pointer-events-none text-[11px] font-semibold text-slate-400 bg-slate-900/80 backdrop-blur-md px-2 py-0.5 rounded border border-slate-700/60 shadow">
+              360° Drag & Zoom
+            </div>
+          </>
         )}
 
         {/* Progress Bar */}
