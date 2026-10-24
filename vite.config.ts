@@ -43,5 +43,40 @@ export default defineConfig({
         ]
       }
     })
-  ]
+  ],
+  build: {
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress known onnxruntime-web third-party direct eval warning
+        if (warning.code === 'EVAL' && warning.id?.includes('onnxruntime-web')) {
+          return;
+        }
+        warn(warning);
+      },
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/three')) {
+            return 'three-vendor';
+          }
+          if (id.includes('node_modules/@xenova') || id.includes('node_modules/onnxruntime-web')) {
+            return 'transformers-vendor';
+          }
+          if (
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/react-router-dom/')
+          ) {
+            return 'react-vendor';
+          }
+          if (id.includes('node_modules/dexie')) {
+            return 'dexie-vendor';
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'lucide-vendor';
+          }
+        }
+      }
+    }
+  }
 });
