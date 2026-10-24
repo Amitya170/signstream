@@ -43,13 +43,14 @@ Project SignStream is a mobile-first, local-first Progressive Web App (PWA) faci
 
 | Feature / Module | Status | Details & Limits |
 | :--- | :--- | :--- |
-| **ISL Grammar & Speech to Sign** | ✅ **REAL & FUNCTIONAL** | Linguistic ISL Grammar Engine (`islGrammarEngine.ts`) converting SVO input to authentic ISL Topic-Comment / SOV syntax with interrogatives at clause end and Non-Manual Markers (NMMs). Matches 49+ authentic ISL signs with complete two-handed manual fingerspelling (A-Z) fallback for unseen proper nouns. |
-| **Avatar Stage (3D Three.js + 2D SVG)** | ✅ **REAL & FUNCTIONAL** | Anatomical humanoid rig with 360° touch/mouse orbit controls, dual-phalanx knuckles, respiratory breathing oscillation, eyelid blinking, and facial blendshapes. 2D SVG fallback for low-spec devices. |
+| **ISL Grammar & Live Sentence Signer** | ✅ **REAL & FUNCTIONAL** | Linguistic ISL Grammar Engine (`islGrammarEngine.ts`) converting SVO input to authentic ISL Topic-Comment / SOV syntax with interrogatives at clause end and Non-Manual Markers (NMMs). Master Continuous Sentence Compiler (`liveSentenceSigner.ts`) with 160ms co-articulation smoothing, 94+ authentic ISL signs, full numbers, and two-handed manual fingerspelling (A-Z) fallback for proper nouns. |
+| **Interactive Teleprompter HUD** | ✅ **REAL & FUNCTIONAL** | Live word-by-word synchronized highlighting matching the avatar's real-time signing timestamp. Interactive word chips allow 1-click seeking directly to any sign in the sentence. |
+| **Avatar Stage (3D Three.js + 2D SVG)** | ✅ **REAL & FUNCTIONAL** | High-definition PBR humanoid rig with PCFSoftShadowMap, ACESFilmic tone mapping, studio floor pedestal, and 3-point cinematic lighting. Features biomechanical smootherstep minimum-jerk easing, shortest-arc spherical rotations (`lerpAngle`), dynamic finger splay, true 3D thumb multi-axis opposition, saccadic eye micro-gaze tracking, and floating camera perspective presets (`Signing`, `Hands Focus`, `Face NMM`, `Free 360° Orbit`). 2D SVG fallback with articulated splay curves for low-spec devices. |
 | **Speech-to-Text (Offline Whisper & Web Speech)** | ✅ **REAL & FUNCTIONAL** | Real on-device Whisper STT via `@xenova/transformers` (`whisper-tiny` running locally on WebGPU/WASM) with model download progress & caching, browser Web Speech API fallback with active privacy notice, and typed input. |
-| **Audio Waveform & Deaf Sound Alert** | ✅ **REAL & FUNCTIONAL** | Real-time Web Audio API frequency spectrum equalizer with decibel meter, plus an automatic perimeter visual glow alert notifying Deaf users when ambient speech is detected. |
+| **Audio Waveform & Acoustic Monitor** | ✅ **REAL & FUNCTIONAL** | Real-time Web Audio API frequency spectrum equalizer with decibel meter, plus an automatic perimeter visual glow alert notifying Deaf users when ambient speech is detected. |
 | **Text-to-Speech (TTS)** | ✅ **REAL & FUNCTIONAL** | Browser `SpeechSynthesis` with voice picker (supporting `en-IN` & `hi-IN`), pitch, and rate control. |
 | **Sign-to-Speech & Vision HUD** | ✅ **REAL & FUNCTIONAL (DEMO SCOPE)** | Continuous temporal classifier (`temporalGestureClassifier.ts`) with a 45-frame rolling buffer, stroke segmentation, and commercial Vision HUD (signing silhouette guide, ambient lux meter, tracking stability). Real-time dual-hand MediaPipe tracking. Strictly enforces confirm-before-speak flow. |
-| **Conversation Mode & Domain Packs** | ✅ **REAL & FUNCTIONAL** | Two-way timeline with message source provenance tags, high-contrast 180° flip partner screen, and pre-calibrated Enterprise Domain Packs (Healthcare, Banking, Transit, Emergency). |
+| **Conversation Mode & Domain Packs** | ✅ **REAL & FUNCTIONAL** | Two-way timeline with message source provenance tags, high-contrast 180° flip partner screen, and pre-calibrated Enterprise Domain Packs (Healthcare, Transit & Metro, Banking & KYC, Family & Relations, Emergency SOS). |
 | **1-Tap Emergency SOS Beacon** | ✅ **REAL & FUNCTIONAL** | Instant distress mode with full-screen high-contrast visual alert, repeating audio announcement loop, mobile SOS haptic vibration, and ISL Emergency sign loop. |
 | **Official Session Audit Report** | ✅ **REAL & FUNCTIONAL** | Printable / PDF-exportable formal session record with timestamps, speaker roles, verified trust levels, and dual signature blocks for counters and clinics. |
 | **Local-First Memory (Dexie IndexedDB)** | ✅ **REAL & FUNCTIONAL** | Safe self-improvement: frequent phrases, custom vocabulary, local voice corrections post-processing, storage gauge, memory pause, and WebCrypto AES-GCM encrypted export/import. |
@@ -68,8 +69,8 @@ Project SignStream is a mobile-first, local-first Progressive Web App (PWA) faci
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/project-signstream/signstream.git
-cd project-signstream
+git clone https://github.com/Amitya170/signstream.git
+cd signstream
 
 # 2. Install dependencies
 npm install
@@ -210,3 +211,5 @@ Every piece of content carries a trust rating:
 - **Milestone 2 (Completed):** On-device camera landmark overlay, geometric template matcher with DEMO rating, user custom personal sign recording, confirm-before-speak flow.
 - **Milestone 3 (Completed):** Local-first Dexie database, voice corrections post-processing, offline Whisper adapter architecture, WebCrypto AES-GCM encrypted backup export/import, pack import with reviewer sign-off requirement.
 - **Milestone 4 (Completed):** Evaluation harness (`scripts/evaluate_model.py`), axe-core WCAG audits in CI, Playwright smoke tests, full ethics, architecture, and data source documentation.
+- **Milestone 5 (Completed):** Commercial-grade overhaul: Continuous temporal gesture classifier, Vision HUD with ambient lux detector and silhouette guide, emergency SOS beacon, enterprise domain scenario packs, and printable official session audit transcripts.
+- **Milestone 6 (Completed):** Advanced 94-clip authentic ISL lexicon, continuous sentence compilation with co-articulation smoothing, live word-sync teleprompter strip with 1-click seeking, biomechanical minimum-jerk smootherstep easing, dynamic finger splay, true 3D thumb opposability, and saccadic eye micro-gaze tracking.
