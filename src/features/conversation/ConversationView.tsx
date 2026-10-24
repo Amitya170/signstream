@@ -1,0 +1,459 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Send,
+  Mic,
+  MicOff,
+  Volume2,
+  Copy,
+  Trash2,
+  Edit2,
+  Maximize2,
+  Eye,
+  Check,
+  RotateCw,
+  Hand
+} from 'lucide-react';
+import { Message, MessageSource, Phrase, SignClip } from '../../core/types';
+import { db, addMessage, applyUserCorrections } from '../../lib/storage';
+import { TrustBadge } from '../../components/TrustBadge';
+import { browserSpeechSynthesis } from '../../adapters/tts/browserSpeechSynthesis';
+import { getSttAdapter } from '../../adapters/stt/sttFactory';
+import { lexiconManager } from '../../data/lexicon';
+import { AvatarStage } from '../../components/AvatarStage';
+
+export const ConversationView: React.FC = () => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [quickPhrases, setQuickPhrases] = useState<Phrase[]>([]);
+  const [inputText, setInputText] = useState<string>('');
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+
+  // Full-Screen "Show to Other Person" State
+  const [fullScreenText, setFullScreenText] = useState<string | null>(null);
+  const [isRotated180, setIsRotated180] = useState<boolean>(false);
+
+  // Sign preview modal
+  const [previewClip, setPreviewClip] = useState<SignClip | null>(null);
+
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const loadData = async () => {
+    const allMessages = await db.messages.orderBy('timestamp').toArray();
+    setMessages(allMessages);
+
+    const phrases = await db.phrases.orderBy('frequency').reverse().limit(8).toArray();
+    setQuickPhrases(phrases);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
+  }, [messages.length]);
+
+  const handleSendMessage = async (textToSend?: string) => {
+    const raw = (textToSend || inputText).trim();
+    if (!raw) return;
+
+    const corrected = await applyUserCorrections(raw);
+
+    if (editingMessageId) {
+      await db.messages.update(editingMessageId, { text: corrected });
+      setEditingMessageId(null);
+      setInputText('');
+      loadData();
+      return;
+    }
+
+    // Check if phrase matches any verified/demo ISL sign
+    const clip = lexiconManager.findClipByGloss(corrected);
+
+    await addMessage({
+      text: corrected,
+      source: 'TYPED',
+      trustLevel: clip ? clip.trustLevel : 'UNVERIFIED',
+      glossMatch: clip?.gloss
+    });
+
+    setInputText('');
+    loadData();
+  };
+
+  const handleToggleMic = async () => {
+    const row = await db.settings.get('app_settings');
+    const preferred = (row?.value?.sttEngine as 'whisper' | 'webSpeech' | 'mock') || 'webSpeech';
+    const adapter = getSttAdapter(preferred);
+
+    if (isListening) {
+      await adapter.stop();
+      setIsListening(false);
+      return;
+    }
+
+    if (!adapter.isSupported()) return;
+
+    try {
+      await adapter.start('en', {
+        onResult: async (text, isFinal) => {
+          if (isFinal && text.trim()) {
+            const corrected = await applyUserCorrections(text.trim());
+            const clip = lexiconManager.findClipByGloss(corrected);
+            await addMessage({
+              text: corrected,
+              source: 'SPOKEN',
+              trustLevel: clip ? clip.trustLevel : 'UNVERIFIED',
+              glossMatch: clip?.gloss
+            });
+            loadData();
+          }
+        },
+        onError: () => setIsListening(false),
+        onStateChange: (state) => setIsListening(state === 'listening' || state === 'downloading')
+      });
+      setIsListening(true);
+    } catch {
+      setIsListening(false);
+    }
+  };
+
+  const handleSpeakAloud = async (text: string) => {
+    await browserSpeechSynthesis.speak(text);
+  };
+
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleDelete = async (id: string) => {
+    await db.messages.delete(id);
+    loadData();
+  };
+
+  const handleShowSign = (msg: Message) => {
+    const gloss = msg.glossMatch || msg.text;
+    const clip = lexiconManager.findClipByGloss(gloss);
+    if (clip) {
+      setPreviewClip(clip);
+    }
+  };
+
+  const sourceLabels: Record<MessageSource, { label: string; badgeClass: string }> = {
+    TYPED: { label: 'TYPED', badgeClass: 'bg-slate-800 text-slate-300' },
+    SPOKEN: { label: 'SPOKEN (STT)', badgeClass: 'bg-purple-950/70 text-purple-300 border-purple-500/40' },
+    'SIGN-DEMO': { label: 'SIGN-DEMO', badgeClass: 'bg-amber-950/70 text-amber-300 border-amber-500/40' },
+    TRANSLATED: { label: 'TRANSLATED', badgeClass: 'bg-teal-950/70 text-teal-300 border-teal-500/40' },
+    UNVERIFIED: { label: 'UNVERIFIED', badgeClass: 'bg-rose-950/70 text-rose-300 border-rose-500/40' }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 py-4 flex flex-col h-[calc(100vh-140px)]">
+      {/* Top Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div>
+          <h1 className="text-xl font-bold text-white tracking-tight">Conversation Mode</h1>
+          <p className="text-xs text-slate-400">Accessible dialogue with speech synthesis and large-text mode</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            if (messages.length > 0) {
+              setFullScreenText(messages[messages.length - 1].text);
+            }
+          }}
+          disabled={messages.length === 0}
+          className="min-h-touch px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-sm"
+          title="Open large high-contrast display for face-to-face partner"
+        >
+          <Maximize2 className="w-4 h-4 text-brand-400" />
+          <span>Large View</span>
+        </button>
+      </div>
+
+      {/* Quick Phrases Bar */}
+      {quickPhrases.length > 0 && (
+        <div className="py-2.5 overflow-x-auto flex items-center gap-1.5 border-b border-slate-800/80 no-scrollbar">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">
+            Quick:
+          </span>
+          {quickPhrases.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => handleSendMessage(p.text)}
+              className="min-h-[36px] px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 hover:border-brand-500/60 text-xs text-slate-300 whitespace-nowrap transition-colors"
+            >
+              {p.text}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Messages Timeline */}
+      <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1">
+        {messages.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 space-y-2">
+            <Hand className="w-10 h-10 text-slate-600 mb-1" />
+            <p className="text-sm font-semibold text-slate-400">No messages yet.</p>
+            <p className="text-xs max-w-xs">
+              Type or speak a message below, or use the sign camera to populate the conversation.
+            </p>
+          </div>
+        ) : (
+          messages.map((m) => {
+            const srcMeta = sourceLabels[m.source] || sourceLabels['UNVERIFIED'];
+            const hasClip = Boolean(m.glossMatch || lexiconManager.findClipByGloss(m.text));
+
+            return (
+              <div
+                key={m.id}
+                className="group p-4 rounded-2xl bg-slate-900/90 border-2 border-slate-800 hover:border-slate-700 transition-all space-y-2.5 shadow-md"
+              >
+                {/* Meta Header */}
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-black tracking-wide border ${srcMeta.badgeClass}`}
+                    >
+                      {srcMeta.label}
+                    </span>
+                    <TrustBadge level={m.trustLevel} showDetailsButton={false} />
+                  </div>
+                  <span className="text-slate-500 text-[11px]">
+                    {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+
+                {/* Message Body */}
+                <p className="text-white text-base sm:text-lg font-medium leading-relaxed break-words">
+                  {m.text}
+                </p>
+
+                {/* Actions Toolbar */}
+                <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-1 text-xs">
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleSpeakAloud(m.text)}
+                      className="min-h-touch px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-1 font-semibold"
+                      aria-label="Speak aloud"
+                    >
+                      <Volume2 className="w-4 h-4 text-brand-400" />
+                      <span>Speak</span>
+                    </button>
+
+                    {hasClip && (
+                      <button
+                        type="button"
+                        onClick={() => handleShowSign(m)}
+                        className="min-h-touch px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-1 font-semibold"
+                        aria-label="Show ISL sign"
+                      >
+                        <Eye className="w-4 h-4 text-amber-400" />
+                        <span>Sign</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFullScreenText(m.text);
+                      }}
+                      className="min-h-touch px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-1 font-semibold"
+                      aria-label="Present full screen"
+                    >
+                      <Maximize2 className="w-4 h-4 text-blue-400" />
+                      <span>Present</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-1 text-slate-400">
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(m.id, m.text)}
+                      className="p-2 min-h-touch rounded-lg hover:text-white hover:bg-slate-800"
+                      aria-label="Copy text"
+                    >
+                      {copiedId === m.id ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingMessageId(m.id);
+                        setInputText(m.text);
+                      }}
+                      className="p-2 min-h-touch rounded-lg hover:text-white hover:bg-slate-800"
+                      aria-label="Edit message"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(m.id)}
+                      className="p-2 min-h-touch rounded-lg text-rose-400 hover:text-rose-300 hover:bg-slate-800"
+                      aria-label="Delete message"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Composer */}
+      <div className="pt-2">
+        {editingMessageId && (
+          <div className="flex items-center justify-between text-xs text-amber-300 pb-1.5 px-1">
+            <span>Editing message...</span>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingMessageId(null);
+                setInputText('');
+              }}
+              className="text-slate-400 hover:text-white underline"
+            >
+              Cancel Edit
+            </button>
+          </div>
+        )}
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSendMessage();
+          }}
+          className="flex items-center gap-2"
+        >
+          <input
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="Type message here (or speak)..."
+            className="flex-1 min-h-touch px-4 py-3 bg-slate-900 border-2 border-slate-700 focus:border-brand-500 rounded-xl text-white placeholder-slate-500 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+          />
+
+          <button
+            type="button"
+            onClick={handleToggleMic}
+            className={`min-h-touch min-w-touch p-3 rounded-xl border flex items-center justify-center transition-all ${
+              isListening
+                ? 'bg-rose-600 text-white border-rose-400 animate-pulse'
+                : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+            }`}
+            aria-label={isListening ? 'Stop microphone' : 'Speak message'}
+          >
+            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5 text-brand-400" />}
+          </button>
+
+          <button
+            type="submit"
+            disabled={!inputText.trim()}
+            className="min-h-touch min-w-touch px-5 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-40 text-white font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-brand-950/40"
+            aria-label="Send message"
+          >
+            <Send className="w-4 h-4" />
+            <span className="hidden sm:inline">Send</span>
+          </button>
+        </form>
+      </div>
+
+      {/* Full-Screen "Show to Other Person" High-Contrast Modal */}
+      {fullScreenText && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="High contrast partner display"
+          className="fixed inset-0 z-50 bg-black text-yellow-300 p-6 flex flex-col justify-between"
+        >
+          <div className="flex items-center justify-between border-b-2 border-yellow-400/40 pb-4">
+            <span className="text-sm font-black tracking-widest text-yellow-400 uppercase">
+              PROJECT SIGNSTREAM | CONVERSATION
+            </span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsRotated180(!isRotated180)}
+                className="min-h-touch px-4 py-2 rounded-xl bg-yellow-400 text-black font-black text-xs flex items-center gap-2 shadow"
+                aria-label="Rotate 180 degrees for person sitting across"
+              >
+                <RotateCw className="w-4 h-4" />
+                <span>Flip 180°</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFullScreenText(null)}
+                className="min-h-touch px-4 py-2 rounded-xl bg-slate-900 border-2 border-yellow-400 text-yellow-300 font-bold text-xs"
+              >
+                Close (ESC)
+              </button>
+            </div>
+          </div>
+
+          <div
+            className={`flex-1 flex items-center justify-center px-4 transition-transform duration-300 ${
+              isRotated180 ? 'rotate-180' : ''
+            }`}
+          >
+            <p className="text-3xl sm:text-5xl md:text-6xl font-black text-center leading-tight tracking-tight select-none">
+              {fullScreenText}
+            </p>
+          </div>
+
+          <div className="border-t-2 border-yellow-400/40 pt-4 flex items-center justify-between text-xs text-yellow-400/80">
+            <span>High-Contrast Partner Mode</span>
+            <button
+              type="button"
+              onClick={() => handleSpeakAloud(fullScreenText)}
+              className="px-3 py-1.5 rounded-lg bg-yellow-400 text-black font-bold flex items-center gap-1.5"
+            >
+              <Volume2 className="w-4 h-4" /> Speak Aloud
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Sign Clip Modal Preview */}
+      {previewClip && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="ISL Sign Keyframe Preview"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm p-4 flex items-center justify-center"
+        >
+          <div className="w-full max-w-lg bg-slate-900 border-2 border-brand-500 rounded-2xl p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-white text-lg">{previewClip.gloss}</span>
+                <TrustBadge level={previewClip.trustLevel} provenance={previewClip.provenance} />
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewClip(null)}
+                className="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white"
+              >
+                Close
+              </button>
+            </div>
+
+            <AvatarStage clip={previewClip} />
+
+            <div className="text-xs text-slate-400 flex items-center justify-between">
+              <span>{previewClip.labels.en} • {previewClip.labels.hi}</span>
+              <span>Source: {previewClip.provenance.source}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

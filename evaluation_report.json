@@ -1,0 +1,36 @@
+{
+  "benchmark_name": "ISL Isolated Gesture Benchmark v1.0",
+  "evaluator_script_version": "1.0.0",
+  "model_file": "models/isl_baseline.onnx",
+  "model_loaded": false,
+  "status": "STUB_MODE",
+  "input_dimensions": "[Batch, 30_Frames, 126_Landmarks_XYZ]",
+  "total_classes": 12,
+  "target_glosses": [
+    "NAMASTE",
+    "THANK-YOU",
+    "PLEASE",
+    "YES",
+    "NO",
+    "HELP",
+    "WATER",
+    "FOOD",
+    "DOCTOR",
+    "DEAF",
+    "HOW-ARE-YOU",
+    "GOOD-MORNING"
+  ],
+  "metrics": {
+    "top1_accuracy": 0.0,
+    "top5_accuracy": 0.0,
+    "macro_precision": 0.0,
+    "macro_recall": 0.0,
+    "macro_f1": 0.0
+  },
+  "signer_independence": "Signer-independent (unseen signers in test split)",
+  "known_limitations": [
+    "Evaluated on isolated signs only; continuous signing syntax is NOT covered.",
+    "Sensitivity to low-lighting and occluded hand landmarks.",
+    "Requires Deaf native signer sign-off before claiming real-world readiness."
+  ]
+}

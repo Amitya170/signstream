@@ -1,0 +1,284 @@
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  StepForward,
+  Repeat,
+  Gauge,
+  Layers
+} from 'lucide-react';
+import { SignClip } from '../core/types';
+import {
+  interpolateKeyframes,
+  getDefaultPose,
+  InterpolatedPose
+} from '../adapters/signAnimation/SignAnimatorAdapter';
+import { ThreeAvatarRig } from '../adapters/signAnimation/threeAvatarAdapter';
+import { SvgAvatarAdapter } from '../adapters/signAnimation/svgAvatarAdapter';
+import { TrustBadge } from './TrustBadge';
+
+interface AvatarStageProps {
+  clip: SignClip | null;
+  mode?: 'three' | 'svg';
+  skinTone?: string;
+  outfitColor?: string;
+  backgroundColor?: string;
+  showCaption?: boolean;
+  className?: string;
+}
+
+export const AvatarStage: React.FC<AvatarStageProps> = ({
+  clip,
+  mode = 'three',
+  skinTone = '#e0ac69',
+  outfitColor = '#0d9488',
+  backgroundColor = '#0b0f19',
+  showCaption = true,
+  className = ''
+}) => {
+  const threeContainerRef = useRef<HTMLDivElement>(null);
+  const rigRef = useRef<ThreeAvatarRig | null>(null);
+
+  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  const [isLooping, setIsLooping] = useState<boolean>(true);
+  const [speed, setSpeed] = useState<number>(1.0);
+  const [currentTimeMs, setCurrentTimeMs] = useState<number>(0);
+  const [currentPose, setCurrentPose] = useState<InterpolatedPose>(getDefaultPose());
+  const [renderMode, setRenderMode] = useState<'three' | 'svg'>(mode);
+
+  const animFrameRef = useRef<number | null>(null);
+  const lastTimestampRef = useRef<number | null>(null);
+
+  // Initialize Three.js Rig
+  useEffect(() => {
+    if (renderMode !== 'three' || !threeContainerRef.current) return;
+
+    try {
+      const rig = new ThreeAvatarRig(threeContainerRef.current, {
+        skinTone,
+        outfitColor,
+        backgroundColor
+      });
+      rigRef.current = rig;
+
+      const handleResize = () => rig.resize();
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        rig.dispose();
+        rigRef.current = null;
+      };
+    } catch (e) {
+      console.warn('Three.js initialization failed; falling back to 2D SVG avatar.', e);
+      setRenderMode('svg');
+    }
+  }, [renderMode, backgroundColor]);
+
+  // Update rig material options
+  useEffect(() => {
+    if (rigRef.current) {
+      rigRef.current.updateAppearance({ skinTone, outfitColor, backgroundColor });
+    }
+  }, [skinTone, outfitColor, backgroundColor]);
+
+  // Main Animation Loop
+  const animate = useCallback((timestamp: number) => {
+    if (!lastTimestampRef.current) lastTimestampRef.current = timestamp;
+    const delta = (timestamp - lastTimestampRef.current) * speed;
+    lastTimestampRef.current = timestamp;
+
+    if (clip && isPlaying) {
+      setCurrentTimeMs((prevTime) => {
+        const nextTime = prevTime + delta;
+        if (nextTime >= clip.durationMs) {
+          if (isLooping) {
+            return 0;
+          } else {
+            setIsPlaying(false);
+            return clip.durationMs;
+          }
+        }
+        return nextTime;
+      });
+    }
+
+    animFrameRef.current = requestAnimationFrame(animate);
+  }, [clip, isPlaying, isLooping, speed]);
+
+  useEffect(() => {
+    lastTimestampRef.current = null;
+    animFrameRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [animate]);
+
+  // Update current pose based on currentTimeMs
+  useEffect(() => {
+    if (!clip) {
+      const defaultP = getDefaultPose();
+      setCurrentPose(defaultP);
+      if (rigRef.current) rigRef.current.updatePose(defaultP);
+      return;
+    }
+
+    const pose = interpolateKeyframes(clip, currentTimeMs);
+    setCurrentPose(pose);
+    if (rigRef.current) {
+      rigRef.current.updatePose(pose);
+    }
+  }, [clip, currentTimeMs]);
+
+  // Reset playhead when clip changes
+  useEffect(() => {
+    setCurrentTimeMs(0);
+    setIsPlaying(true);
+  }, [clip?.id]);
+
+  const handleStepForward = () => {
+    if (!clip) return;
+    setIsPlaying(false);
+    setCurrentTimeMs((prev) => Math.min(clip.durationMs, prev + 120));
+  };
+
+  const handleReplay = () => {
+    setCurrentTimeMs(0);
+    setIsPlaying(true);
+  };
+
+  const speedOptions = [0.5, 0.75, 1.0, 1.25, 1.5];
+
+  return (
+    <div
+      className={`relative flex flex-col rounded-2xl overflow-hidden bg-slate-950 border-2 border-slate-800 text-slate-100 shadow-2xl ${className}`}
+      role="region"
+      aria-label="Indian Sign Language Animated Avatar Stage"
+    >
+      {/* Top Overlay Header */}
+      <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between pointer-events-none">
+        {showCaption && clip ? (
+          <div className="pointer-events-auto flex items-center gap-2 bg-slate-900/85 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700/80 shadow-lg">
+            <span className="font-extrabold text-sm tracking-wide text-brand-300">
+              {clip.gloss}
+            </span>
+            <span className="text-xs text-slate-300">
+              ({clip.labels.hi} / {clip.labels.en})
+            </span>
+            <TrustBadge level={clip.trustLevel} provenance={clip.provenance} />
+          </div>
+        ) : (
+          <div className="pointer-events-auto bg-slate-900/80 px-3 py-1 rounded-full text-xs text-slate-400">
+            Awaiting Sign Input
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setRenderMode(renderMode === 'three' ? 'svg' : 'three')}
+          className="pointer-events-auto p-1.5 bg-slate-900/80 hover:bg-slate-800 backdrop-blur-md rounded-lg text-xs font-semibold flex items-center gap-1 text-slate-200 border border-slate-700 focus-visible:ring-2"
+          aria-label={`Toggle avatar mode. Current: ${renderMode === 'three' ? '3D Rig' : '2D SVG'}`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          <span>{renderMode === 'three' ? '3D' : '2D'}</span>
+        </button>
+      </div>
+
+      {/* Main Avatar Viewport */}
+      <div className="relative w-full h-72 sm:h-84 flex items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+        {renderMode === 'three' ? (
+          <div ref={threeContainerRef} className="w-full h-full" />
+        ) : (
+          <SvgAvatarAdapter
+            pose={currentPose}
+            skinTone={skinTone}
+            outfitColor={outfitColor}
+            className="w-full h-full max-h-72"
+          />
+        )}
+
+        {/* Progress Bar */}
+        {clip && (
+          <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-slate-800/80">
+            <div
+              className="h-full bg-brand-500 transition-all duration-75"
+              style={{
+                width: `${(currentTimeMs / clip.durationMs) * 100}%`
+              }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Playback Controls Toolbar */}
+      <div className="p-3 bg-slate-900 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+        {/* Play/Pause & Navigation */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setIsPlaying(!isPlaying)}
+            disabled={!clip}
+            className="min-h-touch min-w-touch px-3 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-40 text-white font-bold flex items-center gap-1.5 shadow focus-visible:ring-2"
+            aria-label={isPlaying ? 'Pause animation' : 'Play animation'}
+          >
+            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            <span>{isPlaying ? 'Pause' : 'Play'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleReplay}
+            disabled={!clip}
+            className="min-h-touch p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 focus-visible:ring-2"
+            aria-label="Replay sign from beginning"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleStepForward}
+            disabled={!clip}
+            className="min-h-touch p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 focus-visible:ring-2"
+            aria-label="Step forward 120 milliseconds"
+          >
+            <StepForward className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsLooping(!isLooping)}
+            className={`min-h-touch p-2.5 rounded-xl border focus-visible:ring-2 ${
+              isLooping
+                ? 'bg-brand-950/60 border-brand-500 text-brand-300'
+                : 'bg-slate-800 border-slate-700 text-slate-400'
+            }`}
+            aria-label={`Loop playback: ${isLooping ? 'Enabled' : 'Disabled'}`}
+          >
+            <Repeat className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Playback Speed Selector */}
+        <div className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700">
+          <Gauge className="w-3.5 h-3.5 text-slate-400 ml-1.5 mr-0.5" aria-hidden="true" />
+          {speedOptions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setSpeed(s)}
+              className={`px-2 py-1 rounded-lg text-xs font-semibold focus-visible:ring-2 ${
+                speed === s
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              {s}x
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -1,0 +1,18 @@
+{
+  "name": "Project SignStream - ISL Accessibility Prototype",
+  "short_name": "SignStream",
+  "description": "Open-source, mobile-first, local-first accessibility PWA for Indian Sign Language (ISL), speech, and text.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#0d9488",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/signstream-icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
