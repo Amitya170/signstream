@@ -208,18 +208,23 @@ export const SvgAvatarAdapter: React.FC<SvgAvatarProps> = ({
         {/* Palm Center */}
         <circle cx="0" cy="0" r="16" fill={skinTone} stroke="#0f172a" strokeWidth="2.5" />
         {/* Opposable Thumb */}
-        <ellipse cx="-12" cy="4" rx="8" ry="5" fill={skinTone} stroke="#0f172a" strokeWidth="2" transform="rotate(-30)" />
-        {/* 4 Articulated Fingers */}
+        <ellipse cx="-12" cy="4" rx="8" ry="5" fill={skinTone} stroke="#0f172a" strokeWidth="2" transform={`rotate(${ -30 - (pose.leftHand.spread ?? 0.1) * 20 })`} />
+        {/* 4 Articulated Splayed Fingers */}
         {[-9, -3, 3, 9].map((offset, idx) => {
           const curl = pose.leftHand.curl[idx + 1] ?? 0;
-          const fingerLen = 16 - curl * 10;
+          const spread = pose.leftHand.spread ?? 0.1;
+          const spreadAngles = [-0.25, -0.08, 0.08, 0.25];
+          const fingerLen = 17 - curl * 11;
+          const angle = spreadAngles[idx] * (0.4 + spread * 1.4);
+          const targetX = offset + Math.sin(angle) * fingerLen;
+          const targetY = -10 - Math.cos(angle) * fingerLen;
           return (
             <line
               key={idx}
               x1={offset}
               y1="-10"
-              x2={offset}
-              y2={-10 - fingerLen}
+              x2={targetX}
+              y2={targetY}
               stroke={skinTone}
               strokeWidth="5"
               strokeLinecap="round"
@@ -252,18 +257,23 @@ export const SvgAvatarAdapter: React.FC<SvgAvatarProps> = ({
         {/* Palm Center */}
         <circle cx="0" cy="0" r="16" fill={skinTone} stroke="#0f172a" strokeWidth="2.5" />
         {/* Opposable Thumb */}
-        <ellipse cx="12" cy="4" rx="8" ry="5" fill={skinTone} stroke="#0f172a" strokeWidth="2" transform="rotate(30)" />
-        {/* 4 Articulated Fingers */}
+        <ellipse cx="12" cy="4" rx="8" ry="5" fill={skinTone} stroke="#0f172a" strokeWidth="2" transform={`rotate(${ 30 + (pose.rightHand.spread ?? 0.1) * 20 })`} />
+        {/* 4 Articulated Splayed Fingers */}
         {[-9, -3, 3, 9].map((offset, idx) => {
           const curl = pose.rightHand.curl[idx + 1] ?? 0;
-          const fingerLen = 16 - curl * 10;
+          const spread = pose.rightHand.spread ?? 0.1;
+          const spreadAngles = [-0.25, -0.08, 0.08, 0.25];
+          const fingerLen = 17 - curl * 11;
+          const angle = spreadAngles[idx] * (0.4 + spread * 1.4);
+          const targetX = offset + Math.sin(angle) * fingerLen;
+          const targetY = -10 - Math.cos(angle) * fingerLen;
           return (
             <line
               key={idx}
               x1={offset}
               y1="-10"
-              x2={offset}
-              y2={-10 - fingerLen}
+              x2={targetX}
+              y2={targetY}
               stroke={skinTone}
               strokeWidth="5"
               strokeLinecap="round"

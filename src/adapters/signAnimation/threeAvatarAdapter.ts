@@ -531,12 +531,21 @@ export class ThreeAvatarRig {
     this.leftClavicle.position.y = 0.42 + breath * 0.3;
     this.rightClavicle.position.y = 0.42 + breath * 0.3;
 
-    // 2. Realistic Eyelid Blinking
+    // 2. Realistic Eyelid Blinking & Saccadic Eye Micro-Gaze
     const blinkCycle = now % 4.0;
     const isBlinking = blinkCycle < 0.14;
     const eyelidScale = isBlinking ? 1.0 : 0.1;
     this.leftEyelid.scale.y = eyelidScale;
     this.rightEyelid.scale.y = eyelidScale;
+
+    // Natural biological eye saccades (subtle visual tracking of signing space)
+    const saccadeCycle = (now * 0.35) % 3.2;
+    const saccadeX = saccadeCycle < 0.18 ? 0.0025 : saccadeCycle > 2.9 ? -0.0025 : 0;
+    const saccadeY = Math.sin(now * 0.8) * 0.0015;
+    this.leftEyeGroup.position.x = -0.058 + saccadeX;
+    this.leftEyeGroup.position.y = 0.028 + saccadeY;
+    this.rightEyeGroup.position.x = 0.058 + saccadeX;
+    this.rightEyeGroup.position.y = 0.028 + saccadeY;
 
     // 3. Head & Gaze Orientation
     this.headGroup.rotation.set(
@@ -589,13 +598,24 @@ export class ThreeAvatarRig {
       pose.leftHand.rotation[2]
     );
 
-    // Left Finger Knuckle Articulation
+    // Left Finger Knuckle & Splay Articulation
+    const leftSpread = pose.leftHand.spread ?? 0.1;
+    const spreadFactors = [0, -0.22, -0.06, 0.08, 0.24];
     for (let f = 0; f < 5; f++) {
       const curl = pose.leftHand.curl[f] ?? 0;
       const rig = this.leftFingerRigs[f];
       if (rig) {
-        rig.baseGroup.rotation.x = curl * 1.1;
-        rig.distalGroup.rotation.x = curl * 1.35;
+        if (f === 0) {
+          // Left Thumb Opposability (abduction across palm as curl increases)
+          rig.baseGroup.rotation.x = curl * 0.9;
+          rig.baseGroup.rotation.y = 0.2 + curl * 0.45;
+          rig.baseGroup.rotation.z = 0.45 - leftSpread * 0.35 + curl * 0.25;
+          rig.distalGroup.rotation.x = curl * 1.3;
+        } else {
+          rig.baseGroup.rotation.x = curl * 1.15;
+          rig.baseGroup.rotation.z = spreadFactors[f] * (0.4 + leftSpread * 1.25);
+          rig.distalGroup.rotation.x = curl * 1.35;
+        }
       }
     }
 
@@ -612,13 +632,23 @@ export class ThreeAvatarRig {
       pose.rightHand.rotation[2]
     );
 
-    // Right Finger Knuckle Articulation
+    // Right Finger Knuckle & Splay Articulation
+    const rightSpread = pose.rightHand.spread ?? 0.1;
     for (let f = 0; f < 5; f++) {
       const curl = pose.rightHand.curl[f] ?? 0;
       const rig = this.rightFingerRigs[f];
       if (rig) {
-        rig.baseGroup.rotation.x = curl * 1.1;
-        rig.distalGroup.rotation.x = curl * 1.35;
+        if (f === 0) {
+          // Right Thumb Opposability (abduction across palm as curl increases)
+          rig.baseGroup.rotation.x = curl * 0.9;
+          rig.baseGroup.rotation.y = -0.2 - curl * 0.45;
+          rig.baseGroup.rotation.z = -0.45 + rightSpread * 0.35 - curl * 0.25;
+          rig.distalGroup.rotation.x = curl * 1.3;
+        } else {
+          rig.baseGroup.rotation.x = curl * 1.15;
+          rig.baseGroup.rotation.z = spreadFactors[f] * (0.4 + rightSpread * 1.25);
+          rig.distalGroup.rotation.x = curl * 1.35;
+        }
       }
     }
 

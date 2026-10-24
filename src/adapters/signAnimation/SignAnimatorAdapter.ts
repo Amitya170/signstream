@@ -30,8 +30,20 @@ export interface InterpolatedPose {
   };
 }
 
+export function smootherstep(t: number): number {
+  const c = Math.max(0, Math.min(1, t));
+  return c * c * c * (c * (c * 6 - 15) + 10);
+}
+
 export function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * Math.max(0, Math.min(1, t));
+}
+
+export function lerpAngle(a: number, b: number, t: number): number {
+  let diff = (b - a) % (Math.PI * 2);
+  if (diff > Math.PI) diff -= Math.PI * 2;
+  if (diff < -Math.PI) diff += Math.PI * 2;
+  return a + diff * Math.max(0, Math.min(1, t));
 }
 
 export function interpolateKeyframes(clip: SignClip, timeMs: number): InterpolatedPose {
@@ -58,26 +70,28 @@ export function interpolateKeyframes(clip: SignClip, timeMs: number): Interpolat
   }
 
   const range = next.timeMs - prev.timeMs;
-  const factor = range === 0 ? 0 : (clampedTime - prev.timeMs) / range;
+  const rawRatio = range === 0 ? 0 : (clampedTime - prev.timeMs) / range;
+  // Biomechanical minimum-jerk easing curve for fluid, lifelike movement
+  const factor = smootherstep(rawRatio);
 
   return {
     leftArm: {
       shoulderRotation: [
-        lerp(prev.leftArm?.shoulderRotation?.[0] ?? 0.2, next.leftArm?.shoulderRotation?.[0] ?? 0.2, factor),
-        lerp(prev.leftArm?.shoulderRotation?.[1] ?? 0.2, next.leftArm?.shoulderRotation?.[1] ?? 0.2, factor),
-        lerp(prev.leftArm?.shoulderRotation?.[2] ?? 0, next.leftArm?.shoulderRotation?.[2] ?? 0, factor)
+        lerpAngle(prev.leftArm?.shoulderRotation?.[0] ?? 0.2, next.leftArm?.shoulderRotation?.[0] ?? 0.2, factor),
+        lerpAngle(prev.leftArm?.shoulderRotation?.[1] ?? 0.2, next.leftArm?.shoulderRotation?.[1] ?? 0.2, factor),
+        lerpAngle(prev.leftArm?.shoulderRotation?.[2] ?? 0, next.leftArm?.shoulderRotation?.[2] ?? 0, factor)
       ],
       elbowAngle: lerp(prev.leftArm?.elbowAngle ?? 0.5, next.leftArm?.elbowAngle ?? 0.5, factor),
-      forearmRoll: lerp(prev.leftArm?.forearmRoll ?? 0, next.leftArm?.forearmRoll ?? 0, factor)
+      forearmRoll: lerpAngle(prev.leftArm?.forearmRoll ?? 0, next.leftArm?.forearmRoll ?? 0, factor)
     },
     rightArm: {
       shoulderRotation: [
-        lerp(prev.rightArm?.shoulderRotation?.[0] ?? 0.2, next.rightArm?.shoulderRotation?.[0] ?? 0.2, factor),
-        lerp(prev.rightArm?.shoulderRotation?.[1] ?? -0.2, next.rightArm?.shoulderRotation?.[1] ?? -0.2, factor),
-        lerp(prev.rightArm?.shoulderRotation?.[2] ?? 0, next.rightArm?.shoulderRotation?.[2] ?? 0, factor)
+        lerpAngle(prev.rightArm?.shoulderRotation?.[0] ?? 0.2, next.rightArm?.shoulderRotation?.[0] ?? 0.2, factor),
+        lerpAngle(prev.rightArm?.shoulderRotation?.[1] ?? -0.2, next.rightArm?.shoulderRotation?.[1] ?? -0.2, factor),
+        lerpAngle(prev.rightArm?.shoulderRotation?.[2] ?? 0, next.rightArm?.shoulderRotation?.[2] ?? 0, factor)
       ],
       elbowAngle: lerp(prev.rightArm?.elbowAngle ?? 0.5, next.rightArm?.elbowAngle ?? 0.5, factor),
-      forearmRoll: lerp(prev.rightArm?.forearmRoll ?? 0, next.rightArm?.forearmRoll ?? 0, factor)
+      forearmRoll: lerpAngle(prev.rightArm?.forearmRoll ?? 0, next.rightArm?.forearmRoll ?? 0, factor)
     },
     leftHand: {
       position: [
@@ -86,9 +100,9 @@ export function interpolateKeyframes(clip: SignClip, timeMs: number): Interpolat
         lerp(prev.leftHand?.position?.[2] ?? 0.2, next.leftHand?.position?.[2] ?? 0.2, factor)
       ],
       rotation: [
-        lerp(prev.leftHand?.rotation?.[0] ?? 0, next.leftHand?.rotation?.[0] ?? 0, factor),
-        lerp(prev.leftHand?.rotation?.[1] ?? 0, next.leftHand?.rotation?.[1] ?? 0, factor),
-        lerp(prev.leftHand?.rotation?.[2] ?? 0, next.leftHand?.rotation?.[2] ?? 0, factor)
+        lerpAngle(prev.leftHand?.rotation?.[0] ?? 0, next.leftHand?.rotation?.[0] ?? 0, factor),
+        lerpAngle(prev.leftHand?.rotation?.[1] ?? 0, next.leftHand?.rotation?.[1] ?? 0, factor),
+        lerpAngle(prev.leftHand?.rotation?.[2] ?? 0, next.leftHand?.rotation?.[2] ?? 0, factor)
       ],
       curl: [
         lerp(prev.leftHand?.curl?.[0] ?? 0.2, next.leftHand?.curl?.[0] ?? 0.2, factor),
@@ -106,9 +120,9 @@ export function interpolateKeyframes(clip: SignClip, timeMs: number): Interpolat
         lerp(prev.rightHand?.position?.[2] ?? 0.2, next.rightHand?.position?.[2] ?? 0.2, factor)
       ],
       rotation: [
-        lerp(prev.rightHand?.rotation?.[0] ?? 0, next.rightHand?.rotation?.[0] ?? 0, factor),
-        lerp(prev.rightHand?.rotation?.[1] ?? 0, next.rightHand?.rotation?.[1] ?? 0, factor),
-        lerp(prev.rightHand?.rotation?.[2] ?? 0, next.rightHand?.rotation?.[2] ?? 0, factor)
+        lerpAngle(prev.rightHand?.rotation?.[0] ?? 0, next.rightHand?.rotation?.[0] ?? 0, factor),
+        lerpAngle(prev.rightHand?.rotation?.[1] ?? 0, next.rightHand?.rotation?.[1] ?? 0, factor),
+        lerpAngle(prev.rightHand?.rotation?.[2] ?? 0, next.rightHand?.rotation?.[2] ?? 0, factor)
       ],
       curl: [
         lerp(prev.rightHand?.curl?.[0] ?? 0.2, next.rightHand?.curl?.[0] ?? 0.2, factor),
@@ -123,9 +137,9 @@ export function interpolateKeyframes(clip: SignClip, timeMs: number): Interpolat
       browState: lerp(prev.face?.browState ?? 0, next.face?.browState ?? 0, factor),
       mouthState: (factor > 0.5 ? next.face?.mouthState : prev.face?.mouthState) ?? 'neutral',
       headRotation: [
-        lerp(prev.face?.headRotation?.[0] ?? 0, next.face?.headRotation?.[0] ?? 0, factor),
-        lerp(prev.face?.headRotation?.[1] ?? 0, next.face?.headRotation?.[1] ?? 0, factor),
-        lerp(prev.face?.headRotation?.[2] ?? 0, next.face?.headRotation?.[2] ?? 0, factor)
+        lerpAngle(prev.face?.headRotation?.[0] ?? 0, next.face?.headRotation?.[0] ?? 0, factor),
+        lerpAngle(prev.face?.headRotation?.[1] ?? 0, next.face?.headRotation?.[1] ?? 0, factor),
+        lerpAngle(prev.face?.headRotation?.[2] ?? 0, next.face?.headRotation?.[2] ?? 0, factor)
       ]
     }
   };

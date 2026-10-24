@@ -14,7 +14,8 @@ import {
   Landmark,
   Train,
   AlertOctagon,
-  Activity
+  Activity,
+  Users
 } from 'lucide-react';
 import { SignClip, TranslationCoverage } from '../../core/types';
 import { lexiconTranslator } from '../../adapters/translation/lexiconLookup';
@@ -223,6 +224,8 @@ export const SpeechToSignView: React.FC = () => {
         return <Landmark className="w-3.5 h-3.5" />;
       case 'transit':
         return <Train className="w-3.5 h-3.5" />;
+      case 'family':
+        return <Users className="w-3.5 h-3.5" />;
       case 'emergency':
         return <AlertOctagon className="w-3.5 h-3.5" />;
       default:
