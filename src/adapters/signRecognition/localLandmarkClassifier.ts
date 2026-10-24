@@ -42,6 +42,13 @@ export class LocalLandmarkClassifier implements SignRecognizerAdapter {
     return builtin;
   }
 
+  public classifySync(landmarks: LandmarkPoint[]): RecognitionResult | null {
+    if (!landmarks || landmarks.length < 21) {
+      return null;
+    }
+    return this.classifyCentroid(landmarks);
+  }
+
   public async recognize(landmarks: LandmarkPoint[]): Promise<RecognitionResult | null> {
     if (!landmarks || landmarks.length < 21) {
       return null;

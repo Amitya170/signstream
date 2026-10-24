@@ -37,7 +37,7 @@ export interface FacePoseTarget {
   /** Brow raise (-1 = furrowed/concerned, 0 = neutral, 1 = raised/question) */
   browState?: number;
   /** Mouth expression: 'neutral' | 'open' | 'smile' | 'round' */
-  mouthState?: 'neutral' | 'open' | 'smile' | 'round';
+  mouthState?: 'neutral' | 'open' | 'smile' | 'round' | 'tight-lips';
   /** Head tilt/nod [pitch, yaw, roll] in radians */
   headRotation?: [number, number, number];
 }

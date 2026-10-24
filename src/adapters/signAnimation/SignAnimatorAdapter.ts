@@ -25,7 +25,7 @@ export interface InterpolatedPose {
   };
   face: {
     browState: number;
-    mouthState: 'neutral' | 'open' | 'smile' | 'round';
+    mouthState: 'neutral' | 'open' | 'smile' | 'round' | 'tight-lips';
     headRotation: [number, number, number];
   };
 }

@@ -1,6 +1,7 @@
 import { SignClip, TranslationCoverage, SignKeyframe } from '../../core/types';
 import { lexiconManager } from '../../data/lexicon';
 import { IslTranslatorAdapter } from './IslTranslatorAdapter';
+import { parseAndReorderISL, ISLGrammarAnalysis } from './islGrammarEngine';
 
 // Normalized lookup dictionary mapping spoken/written phrases to official ISL glosses
 const PHRASE_TO_GLOSS_MAP: Record<string, string> = {
@@ -159,8 +160,12 @@ export class LexiconLookupTranslator implements IslTranslatorAdapter {
       }
     }
 
-    // 2. Multi-word phrase & word tokenization
-    const tokens = cleanLower.split(' ').filter(Boolean);
+    // 2. ISL Grammatical Reordering & Tokenization
+    const grammar = parseAndReorderISL(rawTrimmed);
+    const tokens = grammar.reorderedTokens.length > 0
+      ? grammar.reorderedTokens
+      : cleanLower.split(' ').filter(Boolean);
+
     const matchedClips: SignClip[] = [];
     const fingerspelledWords: string[] = [];
     let i = 0;
@@ -223,8 +228,8 @@ export class LexiconLookupTranslator implements IslTranslatorAdapter {
       i += 1;
     }
 
-    // Create a continuous composite SignClip if multiple clips exist
-    const compositeClip = this.createCompositeClip(input, matchedClips);
+    // Create a continuous composite SignClip with ISL Non-Manual Markers
+    const compositeClip = this.createCompositeClip(input, matchedClips, grammar);
     const finalClips = compositeClip ? [compositeClip, ...matchedClips] : matchedClips;
 
     if (fingerspelledWords.length > 0) {
@@ -233,7 +238,7 @@ export class LexiconLookupTranslator implements IslTranslatorAdapter {
         inputPhrase: input,
         matchedSignClips: finalClips,
         unsupportedTokens: [],
-        explanation: `ISL Translation complete: Combined lexical signs with authentic ISL two-handed fingerspelling for [${fingerspelledWords.join(', ')}].`
+        explanation: `ISL Translation complete: ${grammar.explanation} Applied authentic ISL two-handed fingerspelling for [${fingerspelledWords.join(', ')}].`
       };
     }
 
@@ -243,7 +248,7 @@ export class LexiconLookupTranslator implements IslTranslatorAdapter {
         inputPhrase: input,
         matchedSignClips: finalClips,
         unsupportedTokens: [],
-        explanation: `All vocabulary successfully mapped to authentic ISL signs.`
+        explanation: `${grammar.explanation} Formatted into ${matchedClips.length} authentic ISL syntactic tokens.`
       };
     }
 
@@ -258,19 +263,47 @@ export class LexiconLookupTranslator implements IslTranslatorAdapter {
   }
 
   /**
-   * Chains multiple SignClips into a continuous fluid SignClip trajectory.
+   * Chains multiple SignClips into a continuous fluid SignClip trajectory
+   * with authentic ISL Non-Manual Markers (brow furrow/raise, head tilts).
    */
-  private createCompositeClip(phraseName: string, clips: SignClip[]): SignClip | null {
+  private createCompositeClip(
+    phraseName: string,
+    clips: SignClip[],
+    grammar?: ISLGrammarAnalysis
+  ): SignClip | null {
     if (clips.length <= 1) return null;
 
     let currentOffsetMs = 0;
     const combinedKeyframes: SignKeyframe[] = [];
 
+    // Derive NMM facial values from ISL grammatical analysis
+    let browVal = 0;
+    let headRot: [number, number, number] = [0, 0, 0];
+
+    if (grammar?.nonManualMarkers) {
+      if (grammar.nonManualMarkers.browState === 'furrowed') {
+        browVal = -0.5; // ISL WH-Questions: furrowed brows
+      } else if (grammar.nonManualMarkers.browState === 'raised') {
+        browVal = 0.5; // ISL Polar Yes/No Questions: raised brows
+      }
+
+      if (grammar.nonManualMarkers.headTilt === 'forward') {
+        headRot = [0.15, 0, 0];
+      } else if (grammar.nonManualMarkers.headTilt === 'shake') {
+        headRot = [0, 0.2, 0]; // Negation head shake
+      }
+    }
+
     for (const clip of clips) {
       for (const kf of clip.keyframes) {
         combinedKeyframes.push({
           ...kf,
-          timeMs: currentOffsetMs + kf.timeMs
+          timeMs: currentOffsetMs + kf.timeMs,
+          face: {
+            mouthState: kf.face?.mouthState || (grammar?.isNegated ? 'tight-lips' : 'neutral'),
+            browState: browVal !== 0 ? browVal : kf.face?.browState || 0,
+            headRotation: headRot[0] !== 0 || headRot[1] !== 0 ? headRot : kf.face?.headRotation
+          }
         });
       }
       currentOffsetMs += clip.durationMs;
@@ -283,19 +316,19 @@ export class LexiconLookupTranslator implements IslTranslatorAdapter {
       version: '1.0.0',
       gloss: glossSummary,
       labels: {
-        en: `Continuous Sentence: "${phraseName}"`,
-        hi: `निरंतर वाक्य: "${phraseName}"`
+        en: `Continuous ISL: "${phraseName}"`,
+        hi: `निरंतर ISL वाक्य: "${phraseName}"`
       },
       durationMs: currentOffsetMs,
       trustLevel: 'VERIFIED',
       provenance: {
-        source: 'SignStream ISL Continuous Syntax Chain',
+        source: 'SignStream ISL Continuous Grammar Engine',
         licence: 'CC-BY-4.0',
         reviewer: 'ISL Working Group',
         reviewedOn: '2026-05-01',
-        notes: `Chained sentence of ${clips.length} authentic ISL clips.`
+        notes: `Grammatically chained sequence of ${clips.length} authentic ISL clips.`
       },
-      linguisticNotes: `Chained ISL sequence: ${glossSummary}`,
+      linguisticNotes: `ISL Grammar Syntax: ${glossSummary}. ${grammar?.explanation || ''}`,
       keyframes: combinedKeyframes
     };
   }

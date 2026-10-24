@@ -26,6 +26,11 @@ import {
 import { browserSpeechSynthesis } from '../../adapters/tts/browserSpeechSynthesis';
 import { LandmarkPoint } from '../../core/types';
 import { addMessage } from '../../lib/storage';
+import { VisionHUD } from './VisionHUD';
+import {
+  temporalClassifier,
+  StrokePhaseState
+} from '../../adapters/signRecognition/temporalGestureClassifier';
 
 export const SignToSpeechView: React.FC = () => {
   const [hasConsent, setHasConsent] = useState<boolean>(() =>
@@ -41,6 +46,8 @@ export const SignToSpeechView: React.FC = () => {
   const [confirmedText, setConfirmedText] = useState<string>('');
   const [spokenNotification, setSpokenNotification] = useState<boolean>(false);
   const [visionStatus, setVisionStatus] = useState<VisionServiceStatus>('uninitialized');
+  const [phaseState, setPhaseState] = useState<StrokePhaseState | null>(null);
+  const [detectedHandCount, setDetectedHandCount] = useState<number>(0);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -156,11 +163,23 @@ export const SignToSpeechView: React.FC = () => {
           }
         }
 
-        if (detectedLandmarks && frameCounter % 15 === 0) {
-          const match = await landmarkTemplateMatcher.recognize(detectedLandmarks);
-          if (match && match.confidence >= 0.75) {
-            setRecognizedResult(match);
-            setConfirmedText(match.labelEn);
+        // Track hand count
+        const hands = detectedLandmarks
+          ? detectedLandmarks.length >= 42
+            ? 2
+            : detectedLandmarks.length >= 21
+            ? 1
+            : 0
+          : 0;
+        setDetectedHandCount(hands);
+
+        // Continuous temporal gesture recognition over sliding window
+        if (detectedLandmarks) {
+          const { phaseState: currentPhase, recognition } = temporalClassifier.pushFrame(detectedLandmarks);
+          setPhaseState(currentPhase);
+          if (recognition) {
+            setRecognizedResult(recognition);
+            setConfirmedText(recognition.labelEn);
           }
         }
       }
@@ -349,6 +368,14 @@ export const SignToSpeechView: React.FC = () => {
           className={`absolute inset-0 pointer-events-none w-full h-full object-cover ${
             isMirrored ? 'scale-x-[-1]' : ''
           }`}
+        />
+
+        {/* Commercial Vision HUD: Silhouette Guide, Lux Meter, Kinetic Stability */}
+        <VisionHUD
+          phaseState={phaseState}
+          videoRef={videoRef}
+          isActive={isCameraActive}
+          handCount={detectedHandCount}
         />
 
         {/* Live Status Overlay Badges */}

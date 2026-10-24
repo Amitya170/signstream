@@ -11,7 +11,10 @@ import {
   Eye,
   Check,
   RotateCw,
-  Hand
+  Hand,
+  AlertOctagon,
+  Printer,
+  Sparkles
 } from 'lucide-react';
 import { Message, MessageSource, Phrase, SignClip } from '../../core/types';
 import { db, addMessage, applyUserCorrections } from '../../lib/storage';
@@ -20,6 +23,10 @@ import { browserSpeechSynthesis } from '../../adapters/tts/browserSpeechSynthesi
 import { getSttAdapter } from '../../adapters/stt/sttFactory';
 import { lexiconManager } from '../../data/lexicon';
 import { AvatarStage } from '../../components/AvatarStage';
+import { EmergencySOSModal } from './EmergencySOSModal';
+import { DOMAIN_PACKS } from '../../data/lexicon/domainPacks';
+import { openSessionTranscriptPrintWindow } from '../../lib/sessionExporter';
+import { AudioWaveformVisualizer } from '../../components/AudioWaveformVisualizer';
 
 export const ConversationView: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -34,6 +41,11 @@ export const ConversationView: React.FC = () => {
 
   // Sign preview modal
   const [previewClip, setPreviewClip] = useState<SignClip | null>(null);
+
+  // Commercial Tools: 1-Tap SOS Beacon & Domain Packs
+  const [isSosOpen, setIsSosOpen] = useState<boolean>(false);
+  const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
+  const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -88,6 +100,10 @@ export const ConversationView: React.FC = () => {
     const adapter = getSttAdapter(preferred);
 
     if (isListening) {
+      if (audioStream) {
+        audioStream.getTracks().forEach((t) => t.stop());
+        setAudioStream(null);
+      }
       await adapter.stop();
       setIsListening(false);
       return;
@@ -96,6 +112,13 @@ export const ConversationView: React.FC = () => {
     if (!adapter.isSupported()) return;
 
     try {
+      if (navigator.mediaDevices?.getUserMedia) {
+        navigator.mediaDevices
+          .getUserMedia({ audio: true })
+          .then((s) => setAudioStream(s))
+          .catch(() => {});
+      }
+
       await adapter.start('en', {
         onResult: async (text, isFinal) => {
           if (isFinal && text.trim()) {
@@ -152,27 +175,108 @@ export const ConversationView: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-4 flex flex-col h-[calc(100vh-140px)]">
-      {/* Top Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+      {/* Top Header & Commercial Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
         <div>
           <h1 className="text-xl font-bold text-white tracking-tight">Conversation Mode</h1>
-          <p className="text-xs text-slate-400">Accessible dialogue with speech synthesis and large-text mode</p>
+          <p className="text-xs text-slate-400">Two-way accessible dialogue with ISL reordering & speech</p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            if (messages.length > 0) {
-              setFullScreenText(messages[messages.length - 1].text);
-            }
-          }}
-          disabled={messages.length === 0}
-          className="min-h-touch px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-sm"
-          title="Open large high-contrast display for face-to-face partner"
-        >
-          <Maximize2 className="w-4 h-4 text-brand-400" />
-          <span>Large View</span>
-        </button>
+
+        <div className="flex items-center gap-2">
+          {/* 1-Tap Emergency SOS Trigger */}
+          <button
+            type="button"
+            onClick={() => setIsSosOpen(true)}
+            className="min-h-touch px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs flex items-center gap-1.5 shadow-lg shadow-red-900/40 focus-visible:ring-2 focus-visible:ring-red-400"
+            title="Trigger full-screen emergency distress beacon"
+            aria-label="Emergency SOS Beacon"
+          >
+            <AlertOctagon className="w-4 h-4 animate-pulse" />
+            <span>SOS</span>
+          </button>
+
+          {/* Official Printable Session Audit Report */}
+          <button
+            type="button"
+            onClick={() => openSessionTranscriptPrintWindow(messages)}
+            disabled={messages.length === 0}
+            className="min-h-touch px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-sm focus-visible:ring-2"
+            title="Print or export official session record"
+            aria-label="Print or export official session record"
+          >
+            <Printer className="w-4 h-4 text-emerald-400" />
+            <span className="hidden sm:inline">Audit Report</span>
+          </button>
+
+          {/* Large View for Face-to-Face Partner */}
+          <button
+            type="button"
+            onClick={() => {
+              if (messages.length > 0) {
+                setFullScreenText(messages[messages.length - 1].text);
+              }
+            }}
+            disabled={messages.length === 0}
+            className="min-h-touch px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-sm focus-visible:ring-2"
+            title="Open large high-contrast display for face-to-face partner"
+            aria-label="Large View for face-to-face partner"
+          >
+            <Maximize2 className="w-4 h-4 text-brand-400" />
+            <span>Large View</span>
+          </button>
+        </div>
       </div>
+
+      {/* Domain Packs Category Drawer (Healthcare, Banking, Transit, Emergency) */}
+      <div className="py-2 border-b border-slate-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
+          <Sparkles className="w-3 h-3 text-brand-400" />
+          Packs:
+        </span>
+        {DOMAIN_PACKS.map((dp) => (
+          <button
+            key={dp.id}
+            type="button"
+            onClick={() => setSelectedDomain(selectedDomain === dp.id ? null : dp.id)}
+            className={`min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap border transition-colors ${
+              selectedDomain === dp.id
+                ? 'bg-brand-600 border-brand-500 text-white shadow'
+                : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
+            }`}
+          >
+            {dp.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Selected Domain Phrases */}
+      {selectedDomain && (
+        <div className="py-2.5 px-3 bg-slate-900/90 rounded-2xl border border-brand-500/30 my-2 space-y-2 animate-fade-in">
+          <div className="flex items-center justify-between text-xs text-brand-300 font-bold">
+            <span>{DOMAIN_PACKS.find((p) => p.id === selectedDomain)?.name} Quick Vocabulary</span>
+            <button
+              type="button"
+              onClick={() => setSelectedDomain(null)}
+              className="text-slate-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {DOMAIN_PACKS.find((p) => p.id === selectedDomain)?.phrases.map((ph, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleSendMessage(ph.text)}
+                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 flex flex-col text-left transition-colors"
+              >
+                <span className="font-semibold text-white">{ph.text}</span>
+                <span className="text-[10px] text-slate-400">{ph.textHi}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick Phrases Bar */}
       {quickPhrases.length > 0 && (
@@ -310,6 +414,13 @@ export const ConversationView: React.FC = () => {
 
       {/* Input Composer */}
       <div className="pt-2">
+        {/* Real-time Audio Waveform & Deaf Visual Sound Alert */}
+        {isListening && (
+          <div className="mb-2 animate-fade-in">
+            <AudioWaveformVisualizer stream={audioStream} isActive={isListening} />
+          </div>
+        )}
+
         {editingMessageId && (
           <div className="flex items-center justify-between text-xs text-amber-300 pb-1.5 px-1">
             <span>Editing message...</span>
@@ -454,6 +565,9 @@ export const ConversationView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Commercial 1-Tap Emergency SOS Modal */}
+      <EmergencySOSModal isOpen={isSosOpen} onClose={() => setIsSosOpen(false)} />
     </div>
   );
 };

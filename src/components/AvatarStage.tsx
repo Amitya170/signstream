@@ -6,7 +6,8 @@ import {
   StepForward,
   Repeat,
   Gauge,
-  Layers
+  Layers,
+  Compass
 } from 'lucide-react';
 import { SignClip } from '../core/types';
 import {
@@ -198,6 +199,12 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
           />
         )}
 
+        {renderMode === 'three' && (
+          <div className="absolute top-12 right-3 pointer-events-none text-[11px] font-semibold text-slate-400 bg-slate-900/80 backdrop-blur-md px-2 py-0.5 rounded border border-slate-700/60 shadow">
+            360° Drag & Zoom
+          </div>
+        )}
+
         {/* Progress Bar */}
         {clip && (
           <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-slate-800/80">
@@ -258,6 +265,18 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
           >
             <Repeat className="w-4 h-4" />
           </button>
+
+          {renderMode === 'three' && (
+            <button
+              type="button"
+              onClick={() => rigRef.current?.resetView()}
+              className="min-h-touch p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 focus-visible:ring-2"
+              title="Reset 3D camera to front orientation"
+              aria-label="Reset 3D camera to front orientation"
+            >
+              <Compass className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Playback Speed Selector */}
