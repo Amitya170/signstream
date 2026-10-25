@@ -3,6 +3,18 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { InterpolatedPose } from './SignAnimatorAdapter';
 import { AvatarOptions, CameraPreset, VisualStyle } from './threeAvatarAdapter';
 
+export type GlbModelId = 'michelle' | 'readyplayer' | 'xbot';
+
+export interface GlbAvatarOptions extends AvatarOptions {
+  modelId?: GlbModelId;
+}
+
+const MODEL_PATHS: Record<GlbModelId, string> = {
+  michelle: '/models/Michelle.glb',
+  readyplayer: '/models/readyplayer.me.glb',
+  xbot: '/models/Xbot.glb'
+};
+
 interface BoneCache {
   head: THREE.Bone | null;
   neck: THREE.Bone | null;
@@ -19,13 +31,6 @@ interface BoneCache {
   rightFingers: THREE.Bone[][];
 }
 
-interface BoneRestTransform {
-  bone: THREE.Bone;
-  pos: THREE.Vector3;
-  rot: THREE.Euler;
-  quat: THREE.Quaternion;
-}
-
 export class GlbAvatarRig {
   private container: HTMLElement;
   private scene: THREE.Scene;
@@ -33,8 +38,8 @@ export class GlbAvatarRig {
   private renderer: THREE.WebGLRenderer;
   private disposed = false;
   private visualStyle: VisualStyle = 'STUDIO_HUMAN';
+  private currentModelId: GlbModelId = 'michelle';
 
-  // State
   private model: THREE.Group | null = null;
   private bones: BoneCache = {
     head: null,
@@ -51,13 +56,13 @@ export class GlbAvatarRig {
     leftFingers: [[], [], [], [], []],
     rightFingers: [[], [], [], [], []]
   };
-  private restTransforms = new Map<string, BoneRestTransform>();
   private originalMaterials = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
   private holoMaterial: THREE.MeshStandardMaterial;
 
   private loading = true;
   private loadError = false;
   private loadingSpinner: THREE.Group | null = null;
+  private lastPose: InterpolatedPose | null = null;
 
   // Studio Lighting System
   private ambientLight: THREE.AmbientLight;
@@ -79,25 +84,25 @@ export class GlbAvatarRig {
   private orbitY = 0;
   private orbitX = 0;
   private zoomDistance = 1.65;
-  private modelCenterY = 1.35;
+  private modelCenterY = 1.25;
 
   constructor(
     container: HTMLElement,
-    options: AvatarOptions,
-    modelUrl = '/models/readyplayer.me.glb'
+    options: GlbAvatarOptions,
+    modelId: GlbModelId = 'michelle'
   ) {
     this.container = container;
     this.visualStyle = options.visualStyle || 'STUDIO_HUMAN';
+    this.currentModelId = modelId;
     const width = container.clientWidth || 360;
     const height = container.clientHeight || 420;
 
     // 1. Scene & Camera Setup
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(options.backgroundColor);
+    this.camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 100);
 
-    this.camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 100);
-
-    // 2. High-Precision PBR Renderer with Soft Shadows
+    // 2. High-Precision PBR Renderer (with PCFShadowMap)
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
@@ -106,34 +111,31 @@ export class GlbAvatarRig {
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.toneMappingExposure = 1.2;
     container.appendChild(this.renderer.domElement);
 
-    this.applyCameraPreset('CHEST_SIGNING');
-
     // 3. Cinematic Studio Three-Point Lighting System
-    this.ambientLight = new THREE.AmbientLight(0xffffff, 1.1);
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 1.3);
     this.scene.add(this.ambientLight);
 
-    this.keyLight = new THREE.DirectionalLight(0xffffff, 1.3);
-    this.keyLight.position.set(1.4, 3.2, 2.2);
+    this.keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    this.keyLight.position.set(1.5, 3.2, 2.2);
     this.keyLight.castShadow = true;
     this.keyLight.shadow.mapSize.width = 1024;
     this.keyLight.shadow.mapSize.height = 1024;
-    this.keyLight.shadow.bias = -0.001;
     this.scene.add(this.keyLight);
 
-    this.cyanRimLight = new THREE.DirectionalLight(0x38bdf8, 0.85);
+    this.cyanRimLight = new THREE.DirectionalLight(0x38bdf8, 1.0);
     this.cyanRimLight.position.set(-1.8, 2.2, -1.2);
     this.scene.add(this.cyanRimLight);
 
-    this.warmFillLight = new THREE.DirectionalLight(0xfef08a, 0.55);
+    this.warmFillLight = new THREE.DirectionalLight(0xfef08a, 0.6);
     this.warmFillLight.position.set(1.5, 1.2, -1.0);
     this.scene.add(this.warmFillLight);
 
-    this.hologramUpLight = new THREE.PointLight(0x06b6d4, 2.2, 3.0);
+    this.hologramUpLight = new THREE.PointLight(0x06b6d4, 2.5, 3.5);
     this.hologramUpLight.position.set(0, 0.1, 0);
     this.hologramUpLight.visible = this.visualStyle === 'CYBER_HOLOGRAM';
     this.scene.add(this.hologramUpLight);
@@ -142,11 +144,11 @@ export class GlbAvatarRig {
     this.holoMaterial = new THREE.MeshStandardMaterial({
       color: 0x06b6d4,
       emissive: 0x0284c7,
-      emissiveIntensity: 0.6,
-      roughness: 0.2,
-      metalness: 0.75,
+      emissiveIntensity: 0.65,
+      roughness: 0.25,
+      metalness: 0.8,
       transparent: true,
-      opacity: 0.86
+      opacity: 0.88
     });
 
     // 4. Stage Pedestal
@@ -183,41 +185,47 @@ export class GlbAvatarRig {
     this.hologramRing2 = new THREE.Mesh(ring2Geo, holoRingMat);
     this.hologramPedestalGroup.add(this.hologramRing2);
 
-    // 5. Elegant Loading Spinner in 3D Space
     this.createLoadingSpinner();
-
-    // 6. Setup Interaction & Load Model
     this.setupOrbitInteraction();
-    this.loadGlbModel(modelUrl);
+    this.loadGlbModel(this.currentModelId);
+  }
+
+  public loadModel(modelId: GlbModelId): void {
+    if (this.currentModelId === modelId && this.model) return;
+    this.currentModelId = modelId;
+    if (this.model) {
+      this.scene.remove(this.model);
+      this.model = null;
+    }
+    this.originalMaterials.clear();
+    this.createLoadingSpinner();
+    this.loading = true;
+    this.loadGlbModel(modelId);
   }
 
   private createLoadingSpinner(): void {
+    if (this.loadingSpinner) return;
     this.loadingSpinner = new THREE.Group();
-    this.loadingSpinner.position.set(0, 1.35, 0);
+    this.loadingSpinner.position.set(0, 1.25, 0);
 
     const ringGeo = new THREE.TorusGeometry(0.18, 0.014, 16, 48);
     const ringMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
     const ringMesh = new THREE.Mesh(ringGeo, ringMat);
     this.loadingSpinner.add(ringMesh);
-
-    const coreGeo = new THREE.SphereGeometry(0.04, 16, 16);
-    const coreMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
-    this.loadingSpinner.add(coreMesh);
-
     this.scene.add(this.loadingSpinner);
   }
 
-  private loadGlbModel(url: string): void {
+  private loadGlbModel(modelId: GlbModelId): void {
+    const url = MODEL_PATHS[modelId] || MODEL_PATHS.michelle;
     const loader = new GLTFLoader();
+
     loader.load(
       url,
       (gltf) => {
         if (this.disposed) return;
         this.model = gltf.scene;
-
-        // Position and scale human avatar nicely
         this.model.position.set(0, 0, 0);
+
         this.model.traverse((child) => {
           if (child instanceof THREE.Mesh) {
             child.castShadow = true;
@@ -228,33 +236,47 @@ export class GlbAvatarRig {
 
         this.scene.add(this.model);
 
-        // Remove loading spinner
         if (this.loadingSpinner) {
           this.scene.remove(this.loadingSpinner);
           this.loadingSpinner = null;
         }
 
+        // Auto-frame camera based on model bounding box
+        this.autoFrameCamera(this.model);
+
         // Discover and cache skeleton bones
         this.discoverBones(this.model);
-
-        // Apply current visual style
         this.applyVisualStyleToModel();
 
         this.loading = false;
-        this.render();
+        if (this.lastPose) {
+          this.updatePose(this.lastPose);
+        } else {
+          this.render();
+        }
       },
       undefined,
       (error) => {
-        console.warn('GLB Avatar load error, falling back to backup models:', error);
-        // Attempt fallback to Michelle or Xbot if primary fails
-        if (url !== '/models/Michelle.glb') {
-          this.loadGlbModel('/models/Michelle.glb');
+        console.warn(`GLB Avatar load error for ${url}, trying fallback:`, error);
+        if (modelId !== 'readyplayer') {
+          this.loadGlbModel('readyplayer');
         } else {
           this.loadError = true;
           this.loading = false;
         }
       }
     );
+  }
+
+  private autoFrameCamera(root: THREE.Object3D): void {
+    root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3());
+
+    // Head-relative framing invariant to character height & geometry
+    this.modelCenterY = box.max.y - size.y * 0.22;
+    this.zoomDistance = Math.max(1.35, size.y * 0.82);
+    this.applyCameraPreset('CHEST_SIGNING');
   }
 
   private findBone(root: THREE.Object3D, targetName: string): THREE.Bone | null {
@@ -288,7 +310,6 @@ export class GlbAvatarRig {
     this.bones.rightForeArm = this.findBone(root, 'RightForeArm');
     this.bones.rightHand = this.findBone(root, 'RightHand');
 
-    // Discover 5 fingers for left hand (Thumb, Index, Middle, Ring, Pinky)
     const fingerNames = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'];
     for (let f = 0; f < 5; f++) {
       const fName = fingerNames[f];
@@ -301,26 +322,6 @@ export class GlbAvatarRig {
         const rightB = this.findBone(root, `RightHand${fName}${p}`);
         if (rightB) this.bones.rightFingers[f].push(rightB);
       }
-    }
-
-    // Cache rest transforms for all discovered bones
-    root.traverse((child) => {
-      if (child instanceof THREE.Bone) {
-        this.restTransforms.set(child.name, {
-          bone: child,
-          pos: child.position.clone(),
-          rot: child.rotation.clone(),
-          quat: child.quaternion.clone()
-        });
-      }
-    });
-
-    // Detect model vertical framing center
-    if (this.bones.spine2) {
-      const wp = new THREE.Vector3();
-      this.bones.spine2.getWorldPosition(wp);
-      this.modelCenterY = wp.y || 1.35;
-      this.applyCameraPreset('CHEST_SIGNING');
     }
   }
 
@@ -370,19 +371,16 @@ export class GlbAvatarRig {
 
     switch (preset) {
       case 'CHEST_SIGNING':
-        this.camera.position.set(0, cy + 0.05, 1.65);
+        this.camera.position.set(0, cy + 0.05, this.zoomDistance);
         this.camera.lookAt(0, cy - 0.02, 0);
-        this.zoomDistance = 1.65;
         break;
       case 'HANDS_FOCUS':
-        this.camera.position.set(0, cy - 0.08, 1.15);
-        this.camera.lookAt(0, cy - 0.12, 0);
-        this.zoomDistance = 1.15;
+        this.camera.position.set(0, cy - 0.12, this.zoomDistance * 0.72);
+        this.camera.lookAt(0, cy - 0.15, 0);
         break;
       case 'FACE_NMM':
-        this.camera.position.set(0, cy + 0.28, 0.85);
+        this.camera.position.set(0, cy + 0.28, this.zoomDistance * 0.55);
         this.camera.lookAt(0, cy + 0.25, 0);
-        this.zoomDistance = 0.85;
         break;
       case 'FREE_ORBIT':
         break;
@@ -448,43 +446,31 @@ export class GlbAvatarRig {
   }
 
   /**
-   * Main Pose Engine:
-   * Maps sign language InterpolatedPose directly to the realistic Mixamo/ReadyPlayerMe skeleton
-   * with Two-Handed Physical Contact Solver (Namaste prayer, Help fist-on-palm, etc.)
+   * Anatomical 3D Sign Engine & Contact Solver:
+   * Authentic Namaste (Anjali Mudra), Help, and Natural Human Sign Kinematics
    */
   public updatePose(pose: InterpolatedPose): void {
     if (this.disposed) return;
+    this.lastPose = pose;
 
     const now = Date.now() / 1000;
 
     // Loading spinner animation if still downloading
     if (this.loading && this.loadingSpinner) {
       this.loadingSpinner.rotation.z += 0.05;
-      this.loadingSpinner.rotation.x = Math.sin(now * 2) * 0.2;
       this.render();
       return;
     }
 
     if (!this.model) return;
 
-    // 1. Natural Respiratory Chest Oscillation
-    const breath = Math.sin(now * 1.85) * 0.018;
+    // 1. Natural Respiratory Torso Oscillation
+    const breath = Math.sin(now * 1.85) * 0.015;
     if (this.bones.spine2) {
-      this.bones.spine2.rotation.x = breath * 0.4;
-    }
-    if (this.bones.leftShoulder) this.bones.leftShoulder.position.y = breath * 0.005;
-    if (this.bones.rightShoulder) this.bones.rightShoulder.position.y = breath * 0.005;
-
-    // 2. Head Gaze & Nod / Tilt
-    if (this.bones.head) {
-      this.bones.head.rotation.set(
-        pose.face.headRotation[0] * 0.7,
-        pose.face.headRotation[1] * 0.7,
-        pose.face.headRotation[2] * 0.7
-      );
+      this.bones.spine2.rotation.x = breath * 0.3;
     }
 
-    // 3. Two-Handed Interaction & Contact Solver
+    // 2. Two-Handed Interaction & Contact Solver
     const rawL = pose.leftHand.position || [-0.15, -0.1, 0.2];
     const rawR = pose.rightHand.position || [0.15, -0.1, 0.2];
 
@@ -506,108 +492,97 @@ export class GlbAvatarRig {
       }
     }
 
-    // 4. Arm Kinematics (Forward Signing Space Orientation + Adduction)
-    // Left Arm Mapping
-    if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+    // 3. Head Gaze & Respectful Nod
+    if (this.bones.head) {
       if (isPrayingNamaste) {
-        // Namaste prayer pose: arms adducted to center, palms together
-        this.bones.leftArm.rotation.set(0.65, 0.2, 0.95);
-        this.bones.leftForeArm.rotation.set(0.2, 0.3, 1.35);
-        this.bones.leftHand.rotation.set(0, 0.5, 0.3);
-      } else if (isSupportHelp) {
-        // Help pose: open palm at center waist level
-        this.bones.leftArm.rotation.set(0.55, 0.1, 0.75);
-        this.bones.leftForeArm.rotation.set(0.3, 0.2, 1.15);
-        this.bones.leftHand.rotation.set(0.8, 0, 0);
+        // Authentic respectful forward nod
+        this.bones.head.rotation.set(0.12, 0, 0);
       } else {
-        // General signing kinematics from pose
-        const pitchL = Math.max(0.1, pose.leftArm.shoulderRotation[0]);
+        this.bones.head.rotation.set(
+          pose.face.headRotation[0] * 0.7,
+          pose.face.headRotation[1] * 0.7,
+          pose.face.headRotation[2] * 0.7
+        );
+      }
+    }
+
+    // 4. Anatomical Arm & Hand Solving
+    if (isPrayingNamaste) {
+      // Authentic Anjali Mudra: Palms meet cleanly at mid-chest without crossing over, fingers pointing UP
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(0.48, 0.08, 1.05);
+        this.bones.leftForeArm.rotation.set(0.12, 0.38, 0.88);
+        this.bones.leftHand.rotation.set(-0.62, 0.25, 0.58);
+      }
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(0.48, -0.08, -1.05);
+        this.bones.rightForeArm.rotation.set(-0.12, -0.38, -0.88);
+        this.bones.rightHand.rotation.set(-0.62, -0.25, -0.58);
+      }
+    } else if (isSupportHelp) {
+      // Authentic Help Sign: Right fist resting on flat upward-facing left palm
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(0.38, 0.15, 1.22);
+        this.bones.leftForeArm.rotation.set(0.1, 0.7, 1.45);
+        this.bones.leftHand.rotation.set(-0.1, 0.6, 0.4);
+      }
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(0.48, -0.15, -1.2);
+        this.bones.rightForeArm.rotation.set(-0.1, -0.55, -1.55);
+        this.bones.rightHand.rotation.set(0.15, -0.2, -0.2);
+      }
+    } else {
+      // Natural Signing Space: No chicken-wing flare, relaxed adduction near torso
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        const pitchL = Math.max(0, pose.leftArm.shoulderRotation[0]);
         const rollL = pose.leftArm.shoulderRotation[1];
         const yawL = pose.leftArm.shoulderRotation[2];
-        const elbowL = Math.max(0.2, pose.leftArm.elbowAngle);
+        const elbowL = Math.max(0.1, pose.leftArm.elbowAngle);
 
-        this.bones.leftArm.rotation.set(
-          pitchL * 0.85 + Math.abs(rawL[0]) * -0.4,
-          rollL * 0.6,
-          0.3 + pitchL * 0.95 + elbowL * 0.3
-        );
-        this.bones.leftForeArm.rotation.set(
-          pose.leftArm.forearmRoll * 0.5,
-          0.1,
-          elbowL * 0.85
-        );
-        this.bones.leftHand.rotation.set(
-          pose.leftHand.rotation[0],
-          pose.leftHand.rotation[1],
-          pose.leftHand.rotation[2]
-        );
+        const adductionL = 1.32 - pitchL * 0.25;
+        this.bones.leftArm.rotation.set(pitchL * 0.9, rollL * 0.4 + yawL * 0.3, adductionL);
+        this.bones.leftForeArm.rotation.set(pose.leftArm.forearmRoll * 0.4, 0.2, elbowL * 0.95 + 0.15);
+        this.bones.leftHand.rotation.set(pose.leftHand.rotation[0], pose.leftHand.rotation[1], pose.leftHand.rotation[2]);
       }
-    }
-
-    // Right Arm Mapping
-    if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
-      if (isPrayingNamaste) {
-        // Namaste prayer pose: symmetrical meeting at chest
-        this.bones.rightArm.rotation.set(0.65, -0.2, -0.95);
-        this.bones.rightForeArm.rotation.set(-0.2, -0.3, -1.35);
-        this.bones.rightHand.rotation.set(0, -0.5, -0.3);
-      } else if (isSupportHelp) {
-        // Help pose: closed fist resting on left palm
-        this.bones.rightArm.rotation.set(0.65, -0.15, -0.85);
-        this.bones.rightForeArm.rotation.set(0, 0, -1.25);
-        this.bones.rightHand.rotation.set(0, 0, 0);
-      } else {
-        const pitchR = Math.max(0.1, pose.rightArm.shoulderRotation[0]);
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        const pitchR = Math.max(0, pose.rightArm.shoulderRotation[0]);
         const rollR = pose.rightArm.shoulderRotation[1];
         const yawR = pose.rightArm.shoulderRotation[2];
-        const elbowR = Math.max(0.2, pose.rightArm.elbowAngle);
+        const elbowR = Math.max(0.1, pose.rightArm.elbowAngle);
 
-        this.bones.rightArm.rotation.set(
-          pitchR * 0.85 + Math.abs(rawR[0]) * -0.4,
-          rollR * 0.6,
-          -0.3 - pitchR * 0.95 - elbowR * 0.3
-        );
-        this.bones.rightForeArm.rotation.set(
-          pose.rightArm.forearmRoll * 0.5,
-          -0.1,
-          -elbowR * 0.85
-        );
-        this.bones.rightHand.rotation.set(
-          pose.rightHand.rotation[0],
-          pose.rightHand.rotation[1],
-          pose.rightHand.rotation[2]
-        );
+        const adductionR = -1.32 + pitchR * 0.25;
+        this.bones.rightArm.rotation.set(pitchR * 0.9, rollR * 0.4 + yawR * 0.3, adductionR);
+        this.bones.rightForeArm.rotation.set(pose.rightArm.forearmRoll * 0.4, -0.2, -elbowR * 0.95 - 0.15);
+        this.bones.rightHand.rotation.set(pose.rightHand.rotation[0], pose.rightHand.rotation[1], pose.rightHand.rotation[2]);
       }
     }
 
-    // 5. 5-Finger Cascading Phalanges Articulation (Thumb, Index, Middle, Ring, Pinky)
+    // 5. Five-Finger Articulation Across Phalanges
     for (let f = 0; f < 5; f++) {
-      const curlL = isPrayingNamaste ? 0 : (pose.leftHand.curl[f] ?? 0);
+      const curlL = isPrayingNamaste ? 0 : (isSupportHelp ? 0 : (pose.leftHand.curl[f] ?? 0));
       const leftChain = this.bones.leftFingers[f];
       if (leftChain) {
         for (let p = 0; p < leftChain.length; p++) {
           const b = leftChain[p];
           if (f === 0) {
-            // Thumb saddle opposition
-            b.rotation.x = curlL * 0.45;
-            b.rotation.z = curlL * 0.35;
+            b.rotation.x = curlL * 0.35;
+            b.rotation.z = curlL * 0.3;
           } else {
-            // Finger knuckle & interphalangeal flexion
-            b.rotation.z = curlL * 0.75;
+            b.rotation.z = curlL * 0.65;
           }
         }
       }
 
-      const curlR = isPrayingNamaste ? (isSupportHelp ? 0.9 : 0) : (pose.rightHand.curl[f] ?? 0);
+      const curlR = isPrayingNamaste ? 0 : (isSupportHelp ? (f === 0 ? 0.7 : 0.9) : (pose.rightHand.curl[f] ?? 0));
       const rightChain = this.bones.rightFingers[f];
       if (rightChain) {
         for (let p = 0; p < rightChain.length; p++) {
           const b = rightChain[p];
           if (f === 0) {
-            b.rotation.x = curlR * 0.45;
-            b.rotation.z = -curlR * 0.35;
+            b.rotation.x = curlR * 0.35;
+            b.rotation.z = -curlR * 0.3;
           } else {
-            b.rotation.z = -curlR * 0.75;
+            b.rotation.z = -curlR * 0.65;
           }
         }
       }

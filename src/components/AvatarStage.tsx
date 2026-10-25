@@ -21,7 +21,7 @@ import {
   InterpolatedPose
 } from '../adapters/signAnimation/SignAnimatorAdapter';
 import { ThreeAvatarRig, CameraPreset, VisualStyle } from '../adapters/signAnimation/threeAvatarAdapter';
-import { GlbAvatarRig } from '../adapters/signAnimation/glbAvatarAdapter';
+import { GlbAvatarRig, GlbModelId } from '../adapters/signAnimation/glbAvatarAdapter';
 import { SvgAvatarAdapter } from '../adapters/signAnimation/svgAvatarAdapter';
 import { TrustBadge } from './TrustBadge';
 
@@ -63,6 +63,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
   const [currentTimeMs, setCurrentTimeMs] = useState<number>(0);
   const [currentPose, setCurrentPose] = useState<InterpolatedPose>(getDefaultPose());
   const [renderMode, setRenderMode] = useState<AvatarRenderMode>(mode);
+  const [glbModelId, setGlbModelId] = useState<GlbModelId>('michelle');
   const [visualStyle, setVisualStyle] = useState<VisualStyle>(initialVisualStyle);
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('CHEST_SIGNING');
 
@@ -86,9 +87,13 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
           backgroundColor,
           visualStyle
         },
-        '/models/readyplayer.me.glb'
+        glbModelId
       );
       glbRigRef.current = rig;
+
+      // Seed initial pose immediately so model renders in active pose when load completes
+      const initialPose = clip ? interpolateKeyframes(clip, currentTimeMsRef.current) : getDefaultPose();
+      rig.updatePose(initialPose);
 
       const handleResize = () => rig.resize();
       window.addEventListener('resize', handleResize);
@@ -102,7 +107,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
       console.warn('GLB Avatar initialization failed; falling back to Three.js procedural avatar.', e);
       setRenderMode('three');
     }
-  }, [renderMode, backgroundColor]);
+  }, [renderMode, backgroundColor, glbModelId]);
 
   // 2. Initialize Three.js Procedural Rig (Fallback)
   useEffect(() => {
@@ -280,6 +285,24 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
         )}
 
         <div className="flex items-center gap-1.5 pointer-events-auto">
+          {/* 3D Model Selection: Michelle (Realistic Human) vs ReadyPlayer vs Xbot */}
+          {renderMode === 'glb' && (
+            <div className="flex items-center bg-slate-900/90 backdrop-blur-md px-2 py-1 rounded-lg border border-slate-700/80 text-xs">
+              <label htmlFor="avatar-model-select" className="sr-only">3D Avatar Model</label>
+              <select
+                id="avatar-model-select"
+                value={glbModelId}
+                onChange={(e) => setGlbModelId(e.target.value as GlbModelId)}
+                className="bg-transparent text-slate-200 text-xs font-semibold focus:outline-none cursor-pointer"
+                aria-label="Select 3D Avatar Character"
+              >
+                <option value="michelle" className="bg-slate-900 text-slate-100">Michelle (Human)</option>
+                <option value="readyplayer" className="bg-slate-900 text-slate-100">ReadyPlayer (Stylized)</option>
+                <option value="xbot" className="bg-slate-900 text-slate-100">Xbot (Cyber Humanoid)</option>
+              </select>
+            </div>
+          )}
+
           {/* Visual Style: Studio Human vs Cyber Hologram */}
           <button
             type="button"
