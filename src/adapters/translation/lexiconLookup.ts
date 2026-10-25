@@ -66,10 +66,19 @@ const PHRASE_TO_GLOSS_MAP: Record<string, string> = {
   ill: 'SICK',
   unwell: 'SICK',
 
-  // English Greetings & Social
+  // English & Indian Greetings & Social
   namaste: 'NAMASTE',
+  namastey: 'NAMASTE',
+  namasteji: 'NAMASTE',
+  namaskar: 'NAMASTE',
+  namaskaar: 'NAMASTE',
+  namaskaram: 'NAMASTE',
+  namasthe: 'NAMASTE',
+  pranam: 'NAMASTE',
+  pranaam: 'NAMASTE',
   hello: 'NAMASTE',
   hi: 'NAMASTE',
+  hey: 'NAMASTE',
   greetings: 'NAMASTE',
   'thank you': 'THANK-YOU',
   thanks: 'THANK-YOU',

@@ -89,8 +89,17 @@ export const PHRASE_GLOSS_DICT: Record<string, string> = {
 
   // Greetings & Core Social
   namaste: 'NAMASTE',
+  namastey: 'NAMASTE',
+  namasteji: 'NAMASTE',
+  namaskar: 'NAMASTE',
+  namaskaar: 'NAMASTE',
+  namaskaram: 'NAMASTE',
+  namasthe: 'NAMASTE',
+  pranam: 'NAMASTE',
+  pranaam: 'NAMASTE',
   hello: 'NAMASTE',
   hi: 'NAMASTE',
+  hey: 'NAMASTE',
   greetings: 'NAMASTE',
   'thank you': 'THANK-YOU',
   thanks: 'THANK-YOU',

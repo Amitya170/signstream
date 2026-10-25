@@ -575,33 +575,52 @@ export class GlbAvatarRig {
     // 3. Dedicated Authentic ISLRTC Sign Solvers
     if (gloss === 'NAMASTE') {
       // Authentic Sacred Anjali Mudra (Indian Namaste):
-      // Hands held at mid-chest (sternum), palms pressed flush pad-to-pad,
-      // all 10 fingers pointing vertically straight UPWARDS towards the chin.
-      const armPitch = 0.60;
-      const armRoll = 0.08;
-      const armAdduct = 0.98;
-      const forePitch = -0.20;
-      const foreYaw = 0.40;
-      const foreElbow = 1.40;
-      const wristPitch = -1.15;
-      const wristYaw = -0.35;
-      const wristRoll = 0.35;
+      // 1. Preparation (0.0 to 0.28): Hands rise smoothly from rest beside hips to mid-chest.
+      // 2. Stroke & Hold with Polite Bow (0.28 to 0.75): Palms meet flush pad-to-pad, all 10 fingers vertical, respectful Indian head bow.
+      // 3. Release (0.75 to 1.0): Hands separate and descend smoothly back to relaxed rest pose.
+      const anjaliL_Arm: [number, number, number] = [0.60, 0.08, 0.98];
+      const anjaliL_Fore: [number, number, number] = [-0.20, 0.40, 1.40];
+      const anjaliL_Hand: [number, number, number] = [-1.15, -0.35, 0.35];
+
+      const anjaliR_Arm: [number, number, number] = [0.60, -0.08, -0.98];
+      const anjaliR_Fore: [number, number, number] = [-0.20, -0.40, -1.40];
+      const anjaliR_Hand: [number, number, number] = [-1.15, 0.35, -0.35];
+
+      const lArm = stageInterp(progress, 0.28, 0.75, restL_Arm, anjaliL_Arm, anjaliL_Arm);
+      const lFore = stageInterp(progress, 0.28, 0.75, restL_Fore, anjaliL_Fore, anjaliL_Fore);
+      const lHand = stageInterp(progress, 0.28, 0.75, restL_Hand, anjaliL_Hand, anjaliL_Hand);
+
+      const rArm = stageInterp(progress, 0.28, 0.75, restR_Arm, anjaliR_Arm, anjaliR_Arm);
+      const rFore = stageInterp(progress, 0.28, 0.75, restR_Fore, anjaliR_Fore, anjaliR_Fore);
+      const rHand = stageInterp(progress, 0.28, 0.75, restR_Hand, anjaliR_Hand, anjaliR_Hand);
 
       if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
-        this.bones.leftArm.rotation.set(armPitch, armRoll, armAdduct);
-        this.bones.leftForeArm.rotation.set(forePitch, foreYaw, foreElbow);
-        this.bones.leftHand.rotation.set(wristPitch, wristYaw, wristRoll);
+        this.bones.leftArm.rotation.set(...lArm);
+        this.bones.leftForeArm.rotation.set(...lFore);
+        this.bones.leftHand.rotation.set(...lHand);
       }
       if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
-        this.bones.rightArm.rotation.set(armPitch, -armRoll, -armAdduct);
-        this.bones.rightForeArm.rotation.set(forePitch, -foreYaw, -foreElbow);
-        this.bones.rightHand.rotation.set(wristPitch, -wristYaw, -wristRoll);
+        this.bones.rightArm.rotation.set(...rArm);
+        this.bones.rightForeArm.rotation.set(...rFore);
+        this.bones.rightHand.rotation.set(...rHand);
       }
       if (this.bones.head) {
-        this.bones.head.rotation.set(0.12, 0, 0);
+        const bow = (progress >= 0.25 && progress <= 0.78)
+          ? Math.sin(((progress - 0.25) / 0.53) * Math.PI) * 0.16
+          : 0;
+        this.bones.head.rotation.set(bow, 0, 0);
       }
-      overrideCurlL = [0, 0, 0, 0, 0];
-      overrideCurlR = [0, 0, 0, 0, 0];
+
+      // Fingers transition smoothly from relaxed rest curl to flat Anjali Mudra
+      if (progress >= 0.20 && progress <= 0.82) {
+        overrideCurlL = [0, 0, 0, 0, 0];
+        overrideCurlR = [0, 0, 0, 0, 0];
+      } else {
+        const t = progress < 0.20 ? (1 - progress / 0.20) : ((progress - 0.82) / 0.18);
+        const restCurl = [0.32 * t, 0.38 * t, 0.40 * t, 0.40 * t, 0.36 * t];
+        overrideCurlL = restCurl;
+        overrideCurlR = restCurl;
+      }
     } else if (gloss === 'HELP') {
       // Authentic ISLRTC Help:
       // Non-dominant (left) flat hand palm up at chest; dominant (right) closed fist resting on left palm and lifting slightly together.
