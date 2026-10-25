@@ -91,6 +91,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
         glbModelId
       );
       glbRigRef.current = rig;
+      (window as any).__GLB_RIG__ = rig;
 
       // Seed initial pose immediately so model renders in active pose when load completes
       const initialPose = clip ? interpolateKeyframes(clip, currentTimeMsRef.current) : getDefaultPose();

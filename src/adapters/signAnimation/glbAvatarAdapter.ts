@@ -31,6 +31,43 @@ interface BoneCache {
   rightFingers: THREE.Bone[][];
 }
 
+function stageInterp(
+  p: number,
+  tContact: number,
+  tRelease: number,
+  rest: [number, number, number],
+  contact: [number, number, number],
+  release: [number, number, number]
+): [number, number, number] {
+  if (p <= tContact) {
+    const t = tContact > 0 ? Math.max(0, Math.min(1, p / tContact)) : 1;
+    const s = t * t * (3 - 2 * t);
+    return [
+      rest[0] + (contact[0] - rest[0]) * s,
+      rest[1] + (contact[1] - rest[1]) * s,
+      rest[2] + (contact[2] - rest[2]) * s
+    ];
+  } else if (p <= tRelease) {
+    const range = tRelease - tContact;
+    const t = range > 0 ? Math.max(0, Math.min(1, (p - tContact) / range)) : 1;
+    const s = t * t * (3 - 2 * t);
+    return [
+      contact[0] + (release[0] - contact[0]) * s,
+      contact[1] + (release[1] - contact[1]) * s,
+      contact[2] + (release[2] - contact[2]) * s
+    ];
+  } else {
+    const range = 1 - tRelease;
+    const t = range > 0 ? Math.max(0, Math.min(1, (p - tRelease) / range)) : 1;
+    const s = t * t * (3 - 2 * t);
+    return [
+      release[0] + (rest[0] - release[0]) * s,
+      release[1] + (rest[1] - release[1]) * s,
+      release[2] + (rest[2] - release[2]) * s
+    ];
+  }
+}
+
 export class GlbAvatarRig {
   private container: HTMLElement;
   private scene: THREE.Scene;
@@ -465,6 +502,19 @@ export class GlbAvatarRig {
     const gloss = this.lastPose?.activeGloss;
     if (gloss === 'NAMASTE') return 'Anjali Mudra (Namaste)';
     if (gloss === 'HELP') return 'Support Help (Fist on Palm)';
+    if (gloss === 'THANK-YOU') return 'Chin-to-Forward Gratitude (Thank You)';
+    if (gloss === 'DOCTOR') return 'Radial Pulse Check (Doctor)';
+    if (gloss === 'TIME') return 'Wristwatch Tap (Time)';
+    if (gloss === 'PLEASE') return 'Chest Circular Rub (Please)';
+    if (gloss === 'SORRY') return 'Heart Fist Rub with Bow (Sorry)';
+    if (gloss === 'WELCOME') return 'Open Palms Inward Scoop (Welcome)';
+    if (gloss === 'WATER') return 'Sip/Tap at Mouth (Water)';
+    if (gloss === 'YES') return 'Fist Nodding Affirmation (Yes)';
+    if (gloss === 'NO') return 'Index Wagging Negation (No)';
+    if (gloss === 'I') return 'Index Pointing to Chest (I/Me)';
+    if (gloss === 'YOU') return 'Direct Pointing to Partner (You)';
+    if (gloss === 'WHERE') return 'Palms-Up Interrogative Shrug (Where)';
+    if (gloss === 'GOOD') return 'Thumbs-Up Forward Affirmation (Good)';
     if (gloss) return `Authentic ISL: ${gloss}`;
     return 'Articulated Signing';
   }
@@ -494,14 +544,15 @@ export class GlbAvatarRig {
       this.bones.spine2.rotation.x = breath * 0.3;
     }
 
-    // 2. Specific Dedicated ISL Solvers for Complex Multi-Hand Poses
-    const isNamasteSign = pose.activeGloss === 'NAMASTE';
-    const isHelpSign = pose.activeGloss === 'HELP';
+    const gloss = pose.activeGloss;
+    const progress = Math.max(0, Math.min(1, pose.progress ?? 0.5));
+    let overrideCurlL: number[] | null = null;
+    let overrideCurlR: number[] | null = null;
 
     const rawL = pose.leftHand.position || [-0.15, -0.1, 0.2];
     const rawR = pose.rightHand.position || [0.15, -0.1, 0.2];
 
-    // 3. Biomechanical Clavicle & Shoulder Elevation
+    // 2. Biomechanical Clavicle & Shoulder Elevation
     const pitchL = Math.max(0, pose.leftArm.shoulderRotation[0]);
     const pitchR = Math.max(0, pose.rightArm.shoulderRotation[0]);
     if (this.bones.leftShoulder) {
@@ -511,37 +562,29 @@ export class GlbAvatarRig {
       this.bones.rightShoulder.position.y = Math.max(0, pitchR - 0.2) * 0.02 + breath * 0.003;
     }
 
-    // 4. Head Gaze & Respectful Nod / Dynamic Hand Altitude Tracking
-    if (this.bones.head) {
-      if (isNamasteSign) {
-        // Authentic respectful forward nod
-        this.bones.head.rotation.set(0.12, 0, 0);
-      } else {
-        const gazeY = ((rawL[1] + rawR[1]) * 0.5 - 0.1) * 0.2;
-        this.bones.head.rotation.set(
-          pose.face.headRotation[0] * 0.7 - gazeY,
-          pose.face.headRotation[1] * 0.7,
-          pose.face.headRotation[2] * 0.7
-        );
-      }
-    }
+    // Default resting positions
+    const restR_Arm: [number, number, number] = [0.08, -0.04, -1.42];
+    const restR_Fore: [number, number, number] = [0.0, -0.1, -0.2];
+    const restR_Hand: [number, number, number] = [0.05, -0.05, 0.0];
 
-    // 5. Anatomical Arm & Hand Solving with Biomechanical Kinematic Accuracy
-    if (isNamasteSign) {
+    const restL_Arm: [number, number, number] = [0.08, 0.04, 1.42];
+    const restL_Fore: [number, number, number] = [0.0, 0.1, 0.2];
+    const restL_Hand: [number, number, number] = [0.05, 0.05, 0.0];
+
+    // 3. Dedicated Authentic ISLRTC Sign Solvers
+    if (gloss === 'NAMASTE') {
       // Authentic Sacred Anjali Mudra (Indian Namaste):
       // Hands held at mid-chest (sternum), palms pressed flush pad-to-pad,
       // all 10 fingers pointing vertically straight UPWARDS towards the chin.
       const armPitch = 0.60;
       const armRoll = 0.08;
       const armAdduct = 0.98;
-      
-      const forePitch = -0.20; // Upward pitch lifting hands to mid-chest
-      const foreYaw = 0.40;    // Angles forearms inward towards center
-      const foreElbow = 1.40;  // Deep elbow flexion positioning hands at sternum
-
-      const wristPitch = -1.15; // Dorsal extension pointing fingers vertically straight UP
-      const wristYaw = -0.35;   // Turns palms flush against each other pad-to-pad
-      const wristRoll = 0.35;   // Symmetrical coronal alignment
+      const forePitch = -0.20;
+      const foreYaw = 0.40;
+      const foreElbow = 1.40;
+      const wristPitch = -1.15;
+      const wristYaw = -0.35;
+      const wristRoll = 0.35;
 
       if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
         this.bones.leftArm.rotation.set(armPitch, armRoll, armAdduct);
@@ -553,7 +596,12 @@ export class GlbAvatarRig {
         this.bones.rightForeArm.rotation.set(forePitch, -foreYaw, -foreElbow);
         this.bones.rightHand.rotation.set(wristPitch, -wristYaw, -wristRoll);
       }
-    } else if (isHelpSign) {
+      if (this.bones.head) {
+        this.bones.head.rotation.set(0.12, 0, 0);
+      }
+      overrideCurlL = [0, 0, 0, 0, 0];
+      overrideCurlR = [0, 0, 0, 0, 0];
+    } else if (gloss === 'HELP') {
       // Authentic Help Sign: Right fist resting on flat upward-facing left palm
       if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
         this.bones.leftArm.rotation.set(0.48, 0.15, 1.15);
@@ -565,34 +613,455 @@ export class GlbAvatarRig {
         this.bones.rightForeArm.rotation.set(-0.25, -0.55, -1.55);
         this.bones.rightHand.rotation.set(-0.4, -0.2, -0.2);
       }
+      if (this.bones.head) {
+        this.bones.head.rotation.set(0.08, 0, 0);
+      }
+      overrideCurlL = [0, 0, 0, 0, 0];
+      overrideCurlR = [0.7, 0.9, 0.9, 0.9, 0.9];
+    } else if (gloss === 'THANK-YOU') {
+      // Authentic ISLRTC Thank You:
+      // Dominant flat hand touching lower chin, then sweeping smoothly forward/downward in gratitude with polite nod.
+      const chinArm: [number, number, number] = [0.88, -0.08, -0.98];
+      const chinFore: [number, number, number] = [-0.25, -0.40, -1.95];
+      const chinHand: [number, number, number] = [-0.85, 0.30, -0.30];
+
+      const relArm: [number, number, number] = [0.55, -0.10, -1.02];
+      const relFore: [number, number, number] = [-0.20, -0.15, -1.15];
+      const relHand: [number, number, number] = [-0.35, 0.20, -0.15];
+
+      const rArm = stageInterp(progress, 0.32, 0.72, restR_Arm, chinArm, relArm);
+      const rFore = stageInterp(progress, 0.32, 0.72, restR_Fore, chinFore, relFore);
+      const rHand = stageInterp(progress, 0.32, 0.72, restR_Hand, chinHand, relHand);
+
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(...rArm);
+        this.bones.rightForeArm.rotation.set(...rFore);
+        this.bones.rightHand.rotation.set(...rHand);
+      }
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(...restL_Arm);
+        this.bones.leftForeArm.rotation.set(...restL_Fore);
+        this.bones.leftHand.rotation.set(...restL_Hand);
+      }
+      if (this.bones.head) {
+        const nod = progress > 0.32 && progress < 0.85
+          ? Math.sin(((progress - 0.32) / 0.53) * Math.PI) * 0.14
+          : 0;
+        this.bones.head.rotation.set(nod, 0, 0);
+      }
+      overrideCurlR = [0, 0, 0, 0, 0];
+      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+    } else if (gloss === 'DOCTOR') {
+      // Authentic ISLRTC Doctor:
+      // Left arm extended forward at lower chest, palm up. Right index and middle fingers tap twice on inner wrist (pulse).
+      const lArmTarget: [number, number, number] = [0.45, 0.12, 1.15];
+      const lForeTarget: [number, number, number] = [-0.15, 0.65, 1.45];
+      const lHandTarget: [number, number, number] = [-0.30, 0.65, 0.40];
+
+      const rArmTarget: [number, number, number] = [0.48, -0.12, -1.12];
+      const rForeTarget: [number, number, number] = [-0.22, -0.55, -1.50];
+      const rHandTarget: [number, number, number] = [-0.20, -0.30, -0.25];
+
+      const lArm = stageInterp(progress, 0.20, 0.80, restL_Arm, lArmTarget, lArmTarget);
+      const lFore = stageInterp(progress, 0.20, 0.80, restL_Fore, lForeTarget, lForeTarget);
+      const lHand = stageInterp(progress, 0.20, 0.80, restL_Hand, lHandTarget, lHandTarget);
+
+      const rArm = stageInterp(progress, 0.20, 0.80, restR_Arm, rArmTarget, rArmTarget);
+      const rFore = stageInterp(progress, 0.20, 0.80, restR_Fore, rForeTarget, rForeTarget);
+      const rHand = stageInterp(progress, 0.20, 0.80, restR_Hand, rHandTarget, rHandTarget);
+
+      if (progress >= 0.25 && progress <= 0.75) {
+        const tap = Math.sin(((progress - 0.25) / 0.50) * Math.PI * 6);
+        rArm[0] += (tap > 0 ? 0.04 : 0);
+      }
+
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(...lArm);
+        this.bones.leftForeArm.rotation.set(...lFore);
+        this.bones.leftHand.rotation.set(...lHand);
+      }
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(...rArm);
+        this.bones.rightForeArm.rotation.set(...rFore);
+        this.bones.rightHand.rotation.set(...rHand);
+      }
+      if (this.bones.head) {
+        this.bones.head.rotation.set(0.08, 0, 0);
+      }
+      overrideCurlL = [0, 0, 0, 0, 0];
+      overrideCurlR = [0.85, 0, 0, 0.85, 0.85];
+    } else if (gloss === 'TIME') {
+      // Authentic ISLRTC Time:
+      // Left arm across chest, back of wrist up. Right index finger taps wristwatch twice.
+      const lArmTarget: [number, number, number] = [0.45, 0.12, 1.15];
+      const lForeTarget: [number, number, number] = [-0.15, 0.15, 1.45];
+      const lHandTarget: [number, number, number] = [0.20, -0.20, 0.10];
+
+      const rArmTarget: [number, number, number] = [0.48, -0.12, -1.10];
+      const rForeTarget: [number, number, number] = [-0.20, -0.45, -1.50];
+      const rHandTarget: [number, number, number] = [-0.20, -0.20, -0.20];
+
+      const lArm = stageInterp(progress, 0.20, 0.80, restL_Arm, lArmTarget, lArmTarget);
+      const lFore = stageInterp(progress, 0.20, 0.80, restL_Fore, lForeTarget, lForeTarget);
+      const lHand = stageInterp(progress, 0.20, 0.80, restL_Hand, lHandTarget, lHandTarget);
+
+      const rArm = stageInterp(progress, 0.20, 0.80, restR_Arm, rArmTarget, rArmTarget);
+      const rFore = stageInterp(progress, 0.20, 0.80, restR_Fore, rForeTarget, rForeTarget);
+      const rHand = stageInterp(progress, 0.20, 0.80, restR_Hand, rHandTarget, rHandTarget);
+
+      if (progress >= 0.25 && progress <= 0.75) {
+        const tap = Math.sin(((progress - 0.25) / 0.50) * Math.PI * 6);
+        rArm[0] += (tap > 0 ? 0.04 : 0);
+      }
+
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(...lArm);
+        this.bones.leftForeArm.rotation.set(...lFore);
+        this.bones.leftHand.rotation.set(...lHand);
+      }
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(...rArm);
+        this.bones.rightForeArm.rotation.set(...rFore);
+        this.bones.rightHand.rotation.set(...rHand);
+      }
+      if (this.bones.head) {
+        this.bones.head.rotation.set(0.08, 0, 0);
+      }
+      overrideCurlL = [0.3, 0.3, 0.3, 0.3, 0.3];
+      overrideCurlR = [0.85, 0, 0.85, 0.85, 0.85];
+    } else if (gloss === 'PLEASE') {
+      // Authentic ISLRTC Please:
+      // Dominant flat hand circular rub over the chest with respectful expression.
+      const chestArm: [number, number, number] = [0.65, -0.05, -0.75];
+      const chestFore: [number, number, number] = [-0.20, -0.30, -2.05];
+      const chestHand: [number, number, number] = [0.25, 0.35, -0.20];
+
+      const rArm = stageInterp(progress, 0.20, 0.80, restR_Arm, chestArm, chestArm);
+      const rFore = stageInterp(progress, 0.20, 0.80, restR_Fore, chestFore, chestFore);
+      const rHand = stageInterp(progress, 0.20, 0.80, restR_Hand, chestHand, chestHand);
+
+      if (progress >= 0.20 && progress <= 0.80) {
+        const phi = ((progress - 0.20) / 0.60) * Math.PI * 4;
+        rArm[0] += Math.sin(phi) * 0.035;
+        rArm[2] += Math.cos(phi) * 0.035;
+      }
+
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(...rArm);
+        this.bones.rightForeArm.rotation.set(...rFore);
+        this.bones.rightHand.rotation.set(...rHand);
+      }
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(...restL_Arm);
+        this.bones.leftForeArm.rotation.set(...restL_Fore);
+        this.bones.leftHand.rotation.set(...restL_Hand);
+      }
+      if (this.bones.head) {
+        this.bones.head.rotation.set(0.08, 0, 0);
+      }
+      overrideCurlR = [0, 0, 0, 0, 0];
+      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+    } else if (gloss === 'SORRY') {
+      // Authentic ISLRTC Sorry:
+      // Closed fist rubbing gently over heart/chest with remorseful head bow.
+      const chestArm: [number, number, number] = [0.62, -0.05, -0.72];
+      const chestFore: [number, number, number] = [-0.22, -0.32, -2.10];
+      const chestHand: [number, number, number] = [0.20, 0.30, -0.20];
+
+      const rArm = stageInterp(progress, 0.20, 0.80, restR_Arm, chestArm, chestArm);
+      const rFore = stageInterp(progress, 0.20, 0.80, restR_Fore, chestFore, chestFore);
+      const rHand = stageInterp(progress, 0.20, 0.80, restR_Hand, chestHand, chestHand);
+
+      if (progress >= 0.20 && progress <= 0.80) {
+        const phi = ((progress - 0.20) / 0.60) * Math.PI * 4;
+        rArm[0] += Math.sin(phi) * 0.035;
+        rArm[2] += Math.cos(phi) * 0.035;
+      }
+
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(...rArm);
+        this.bones.rightForeArm.rotation.set(...rFore);
+        this.bones.rightHand.rotation.set(...rHand);
+      }
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(...restL_Arm);
+        this.bones.leftForeArm.rotation.set(...restL_Fore);
+        this.bones.leftHand.rotation.set(...restL_Hand);
+      }
+      if (this.bones.head) {
+        this.bones.head.rotation.set(0.14, 0.06, -0.04);
+      }
+      overrideCurlR = [1.0, 1.0, 1.0, 1.0, 1.0];
+      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+    } else if (gloss === 'WELCOME') {
+      // Authentic ISLRTC Welcome:
+      // Both open hands, palms facing up/inward toward body, scooping in welcoming gesture.
+      const lArmTarget: [number, number, number] = [0.48, 0.15, 1.05];
+      const lForeTarget: [number, number, number] = [-0.15, 0.55, 1.25];
+      const lHandTarget: [number, number, number] = [-0.45, 0.45, 0.35];
+
+      const rArmTarget: [number, number, number] = [0.48, -0.15, -1.05];
+      const rForeTarget: [number, number, number] = [-0.15, -0.55, -1.25];
+      const rHandTarget: [number, number, number] = [-0.45, -0.45, -0.35];
+
+      const lArm = stageInterp(progress, 0.25, 0.75, restL_Arm, lArmTarget, lArmTarget);
+      const lFore = stageInterp(progress, 0.25, 0.75, restL_Fore, lForeTarget, lForeTarget);
+      const lHand = stageInterp(progress, 0.25, 0.75, restL_Hand, lHandTarget, lHandTarget);
+
+      const rArm = stageInterp(progress, 0.25, 0.75, restR_Arm, rArmTarget, rArmTarget);
+      const rFore = stageInterp(progress, 0.25, 0.75, restR_Fore, rForeTarget, rForeTarget);
+      const rHand = stageInterp(progress, 0.25, 0.75, restR_Hand, rHandTarget, rHandTarget);
+
+      if (progress >= 0.25 && progress <= 0.75) {
+        const scoop = Math.sin(((progress - 0.25) / 0.50) * Math.PI) * 0.12;
+        lArm[0] -= scoop;
+        rArm[0] -= scoop;
+      }
+
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(...lArm);
+        this.bones.leftForeArm.rotation.set(...lFore);
+        this.bones.leftHand.rotation.set(...lHand);
+      }
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(...rArm);
+        this.bones.rightForeArm.rotation.set(...rFore);
+        this.bones.rightHand.rotation.set(...rHand);
+      }
+      if (this.bones.head) {
+        this.bones.head.rotation.set(0.10, 0, 0);
+      }
+      overrideCurlL = [0, 0, 0, 0, 0];
+      overrideCurlR = [0, 0, 0, 0, 0];
+    } else if (gloss === 'WATER') {
+      // Authentic ISLRTC Water:
+      // Dominant hand in 'W' shape tapping twice near corner of mouth.
+      const mouthArm: [number, number, number] = [0.86, -0.08, -0.95];
+      const mouthFore: [number, number, number] = [-0.25, -0.40, -2.15];
+      const mouthHand: [number, number, number] = [-0.60, 0.35, -0.30];
+
+      const rArm = stageInterp(progress, 0.25, 0.75, restR_Arm, mouthArm, mouthArm);
+      const rFore = stageInterp(progress, 0.25, 0.75, restR_Fore, mouthFore, mouthFore);
+      const rHand = stageInterp(progress, 0.25, 0.75, restR_Hand, mouthHand, mouthHand);
+
+      if (progress >= 0.25 && progress <= 0.75) {
+        const tap = Math.sin(((progress - 0.25) / 0.50) * Math.PI * 6) * 0.04;
+        rFore[2] += tap;
+      }
+
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(...rArm);
+        this.bones.rightForeArm.rotation.set(...rFore);
+        this.bones.rightHand.rotation.set(...rHand);
+      }
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(...restL_Arm);
+        this.bones.leftForeArm.rotation.set(...restL_Fore);
+        this.bones.leftHand.rotation.set(...restL_Hand);
+      }
+      overrideCurlR = [0.85, 0, 0, 0, 0.85];
+      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+    } else if (gloss === 'YES') {
+      // Closed fist nodding up and down at wrist with head nod
+      const chestArm: [number, number, number] = [0.55, -0.10, -1.02];
+      const chestFore: [number, number, number] = [-0.20, -0.20, -1.25];
+
+      const rArm = stageInterp(progress, 0.20, 0.80, restR_Arm, chestArm, chestArm);
+      const rFore = stageInterp(progress, 0.20, 0.80, restR_Fore, chestFore, chestFore);
+      let nod = 0;
+      if (progress >= 0.20 && progress <= 0.80) {
+        nod = Math.sin(((progress - 0.20) / 0.60) * Math.PI * 6) * 0.35;
+      }
+
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(...rArm);
+        this.bones.rightForeArm.rotation.set(...rFore);
+        this.bones.rightHand.rotation.set(-0.35 + nod, 0.15, -0.10);
+      }
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(...restL_Arm);
+        this.bones.leftForeArm.rotation.set(...restL_Fore);
+        this.bones.leftHand.rotation.set(...restL_Hand);
+      }
+      if (this.bones.head) {
+        this.bones.head.rotation.set(Math.max(0, nod * 0.4), 0, 0);
+      }
+      overrideCurlR = [1.0, 1.0, 1.0, 1.0, 1.0];
+      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+    } else if (gloss === 'NO') {
+      // Index finger extended wagging left-right with head shake
+      const chestArm: [number, number, number] = [0.55, -0.10, -1.02];
+      const chestFore: [number, number, number] = [-0.20, -0.20, -1.25];
+
+      const rArm = stageInterp(progress, 0.20, 0.80, restR_Arm, chestArm, chestArm);
+      const rFore = stageInterp(progress, 0.20, 0.80, restR_Fore, chestFore, chestFore);
+      let wag = 0;
+      if (progress >= 0.20 && progress <= 0.80) {
+        wag = Math.sin(((progress - 0.20) / 0.60) * Math.PI * 6) * 0.35;
+      }
+
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(...rArm);
+        this.bones.rightForeArm.rotation.set(...rFore);
+        this.bones.rightHand.rotation.set(-0.35, 0.15 + wag, -0.10);
+      }
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(...restL_Arm);
+        this.bones.leftForeArm.rotation.set(...restL_Fore);
+        this.bones.leftHand.rotation.set(...restL_Hand);
+      }
+      if (this.bones.head) {
+        this.bones.head.rotation.set(0, -wag * 0.4, 0);
+      }
+      overrideCurlR = [0.85, 0, 0.85, 0.85, 0.85];
+      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+    } else if (gloss === 'I') {
+      // Index finger pointing to center of chest
+      const chestArm: [number, number, number] = [0.65, -0.05, -0.75];
+      const chestFore: [number, number, number] = [-0.20, -0.30, -2.05];
+      const chestHand: [number, number, number] = [0.45, 0.35, -0.20];
+
+      const rArm = stageInterp(progress, 0.25, 0.75, restR_Arm, chestArm, chestArm);
+      const rFore = stageInterp(progress, 0.25, 0.75, restR_Fore, chestFore, chestFore);
+      const rHand = stageInterp(progress, 0.25, 0.75, restR_Hand, chestHand, chestHand);
+
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(...rArm);
+        this.bones.rightForeArm.rotation.set(...rFore);
+        this.bones.rightHand.rotation.set(...rHand);
+      }
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(...restL_Arm);
+        this.bones.leftForeArm.rotation.set(...restL_Fore);
+        this.bones.leftHand.rotation.set(...restL_Hand);
+      }
+      overrideCurlR = [0.85, 0, 0.85, 0.85, 0.85];
+      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+    } else if (gloss === 'YOU') {
+      // Index finger pointing forward at conversational partner
+      const fwdArm: [number, number, number] = [0.55, -0.10, -1.02];
+      const fwdFore: [number, number, number] = [-0.15, 0.05, -1.05];
+      const fwdHand: [number, number, number] = [-0.25, 0.15, -0.10];
+
+      const rArm = stageInterp(progress, 0.25, 0.75, restR_Arm, fwdArm, fwdArm);
+      const rFore = stageInterp(progress, 0.25, 0.75, restR_Fore, fwdFore, fwdFore);
+      const rHand = stageInterp(progress, 0.25, 0.75, restR_Hand, fwdHand, fwdHand);
+
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(...rArm);
+        this.bones.rightForeArm.rotation.set(...rFore);
+        this.bones.rightHand.rotation.set(...rHand);
+      }
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(...restL_Arm);
+        this.bones.leftForeArm.rotation.set(...restL_Fore);
+        this.bones.leftHand.rotation.set(...restL_Hand);
+      }
+      if (this.bones.head) {
+        this.bones.head.rotation.set(0.05, 0, 0);
+      }
+      overrideCurlR = [0.85, 0, 0.85, 0.85, 0.85];
+      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+    } else if (gloss === 'WHERE') {
+      // Both open hands palms up at lower chest level shrugging side to side
+      const lArmTarget: [number, number, number] = [0.45, 0.12, 1.10];
+      const lForeTarget: [number, number, number] = [-0.15, 0.50, 1.25];
+      const lHandTarget: [number, number, number] = [-0.40, 0.45, 0.30];
+
+      const rArmTarget: [number, number, number] = [0.45, -0.12, -1.10];
+      const rForeTarget: [number, number, number] = [-0.15, -0.50, -1.25];
+      const rHandTarget: [number, number, number] = [-0.40, -0.45, -0.30];
+
+      const lArm = stageInterp(progress, 0.25, 0.75, restL_Arm, lArmTarget, lArmTarget);
+      const lFore = stageInterp(progress, 0.25, 0.75, restL_Fore, lForeTarget, lForeTarget);
+      const lHand = stageInterp(progress, 0.25, 0.75, restL_Hand, lHandTarget, lHandTarget);
+
+      const rArm = stageInterp(progress, 0.25, 0.75, restR_Arm, rArmTarget, rArmTarget);
+      const rFore = stageInterp(progress, 0.25, 0.75, restR_Fore, rForeTarget, rForeTarget);
+      const rHand = stageInterp(progress, 0.25, 0.75, restR_Hand, rHandTarget, rHandTarget);
+
+      if (progress >= 0.25 && progress <= 0.75) {
+        const shrug = Math.sin(((progress - 0.25) / 0.50) * Math.PI * 4) * 0.04;
+        lArm[2] -= shrug;
+        rArm[2] += shrug;
+      }
+
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(...lArm);
+        this.bones.leftForeArm.rotation.set(...lFore);
+        this.bones.leftHand.rotation.set(...lHand);
+      }
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(...rArm);
+        this.bones.rightForeArm.rotation.set(...rFore);
+        this.bones.rightHand.rotation.set(...rHand);
+      }
+      if (this.bones.head) {
+        this.bones.head.rotation.set(0.04, 0, 0);
+      }
+      overrideCurlL = [0, 0, 0, 0, 0];
+      overrideCurlR = [0, 0, 0, 0, 0];
+    } else if (gloss === 'GOOD') {
+      // Thumbs-up moving forward from chest with affirmative smile
+      const fwdArm: [number, number, number] = [0.55, -0.10, -1.02];
+      const fwdFore: [number, number, number] = [-0.15, -0.10, -1.15];
+      const fwdHand: [number, number, number] = [-0.25, 0.20, -0.10];
+
+      const rArm = stageInterp(progress, 0.25, 0.75, restR_Arm, fwdArm, fwdArm);
+      const rFore = stageInterp(progress, 0.25, 0.75, restR_Fore, fwdFore, fwdFore);
+      const rHand = stageInterp(progress, 0.25, 0.75, restR_Hand, fwdHand, fwdHand);
+
+      if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+        this.bones.rightArm.rotation.set(...rArm);
+        this.bones.rightForeArm.rotation.set(...rFore);
+        this.bones.rightHand.rotation.set(...rHand);
+      }
+      if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+        this.bones.leftArm.rotation.set(...restL_Arm);
+        this.bones.leftForeArm.rotation.set(...restL_Fore);
+        this.bones.leftHand.rotation.set(...restL_Hand);
+      }
+      if (this.bones.head) {
+        this.bones.head.rotation.set(0.08, 0, 0);
+      }
+      overrideCurlR = [0, 1.0, 1.0, 1.0, 1.0];
+      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
     } else {
-      // True 3D Kinematic Spatial Solving: Translates target Hand Coordinates (X, Y, Z) into Authentic ISL Articulation
+      // Dynamic Kinematic Spatial Solving for all other dictionary words and sentences:
+      if (this.bones.head) {
+        const gazeY = ((rawL[1] + rawR[1]) * 0.5 - 0.1) * 0.2;
+        this.bones.head.rotation.set(
+          pose.face.headRotation[0] * 0.7 - gazeY,
+          pose.face.headRotation[1] * 0.7,
+          pose.face.headRotation[2] * 0.7
+        );
+      }
+
       const isRightActive = rawR[1] > -0.05 || rawR[2] > 0.24 || Math.abs(rawR[0] - 0.15) > 0.03;
       const isLeftActive = rawL[1] > -0.05 || rawL[2] > 0.24 || Math.abs(rawL[0] + 0.15) > 0.03;
 
-      // Right Arm Solving (Dominant Signing Hand in standard ISL corpus)
+      // Right Arm Solving
       if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
         if (!isRightActive) {
-          // Natural relaxed resting posture at hip/thigh
-          this.bones.rightArm.rotation.set(0.08, -0.04, -1.42);
-          this.bones.rightForeArm.rotation.set(0.0, -0.1, -0.2);
-          this.bones.rightHand.rotation.set(0.05, -0.05, 0.0);
+          this.bones.rightArm.rotation.set(...restR_Arm);
+          this.bones.rightForeArm.rotation.set(...restR_Fore);
+          this.bones.rightHand.rotation.set(...restR_Hand);
         } else {
           const targetX = rawR[0];
           const targetY = rawR[1];
           const targetZ = rawR[2];
 
-          // 1. Shoulder Pitch: Elevates arm comfortably into chest/chin signing space
+          // 1. Shoulder Pitch
           const basePitchR = 0.42 + (targetY + 0.08) * 0.95;
           const rPitch = targetY > 0.30
             ? Math.max(basePitchR, 0.52 + (targetY - 0.30) * 1.1)
             : basePitchR;
           const clampedPitchR = Math.max(0.25, Math.min(1.42, rPitch));
 
-          // 2. Shoulder Adduction: Precise lateral tracking without cross-body skew
+          // 2. Shoulder Adduction
           const adductionR = -1.25 + Math.min(0.48, Math.max(-0.45, (0.18 - targetX) * 0.88));
 
-          // 3. Elbow Flexion: Uses calibrated keyframe elbow with distance compensation
+          // 3. Elbow Flexion
           const baseElbowR = pose.rightArm?.elbowAngle
             ? pose.rightArm.elbowAngle * 0.95
             : Math.max(0.45, 1.45 - (targetZ - 0.2) * 1.6);
@@ -600,39 +1069,28 @@ export class GlbAvatarRig {
             ? Math.max(baseElbowR, 1.55 + (targetY - 0.30) * 0.6)
             : baseElbowR;
 
-          // 4. Forearm Orientation: Negative pitch keeps hands elevated in front of chest/face
+          // 4. Forearm Orientation
           const foreRollR = pose.rightArm?.forearmRoll || -0.25;
           const rForePitch = -0.20 + (targetY > 0.25 ? -(targetY - 0.25) * 0.35 : 0);
 
           this.bones.rightArm.rotation.set(clampedPitchR, -0.10, adductionR);
           this.bones.rightForeArm.rotation.set(rForePitch, foreRollR, -rElbow);
 
-          // 5. Wrist & Hand Rotation: Natural dorsal extension prevents drooping limp wrists
-          if (targetY > 0.30 && targetZ < 0.28) {
-            // Tilting palm towards face/chin for mouth, chin, or temple contact
-            this.bones.rightHand.rotation.set(
-              -0.75 + (targetZ - 0.20) * 0.5,
-              0.15 + pose.rightHand.rotation[1] * 0.5,
-              -0.05 + pose.rightHand.rotation[2] * 0.5
-            );
-          } else {
-            const wristPitch = -0.45 + (pose.rightHand.rotation[0] || 0) * 0.8;
-            this.bones.rightHand.rotation.set(
-              wristPitch,
-              pose.rightHand.rotation[1],
-              pose.rightHand.rotation[2]
-            );
-          }
+          // 5. Hand & Wrist Rotation: Respects keyframe rotation directly without forced hyperextension
+          this.bones.rightHand.rotation.set(
+            pose.rightHand.rotation[0],
+            pose.rightHand.rotation[1],
+            pose.rightHand.rotation[2]
+          );
         }
       }
 
-      // Left Arm Solving (Secondary / Symmetrical Signing Hand)
+      // Left Arm Solving
       if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
         if (!isLeftActive) {
-          // Natural relaxed resting posture at hip/thigh
-          this.bones.leftArm.rotation.set(0.08, 0.04, 1.42);
-          this.bones.leftForeArm.rotation.set(0.0, 0.1, 0.2);
-          this.bones.leftHand.rotation.set(0.05, 0.05, 0.0);
+          this.bones.leftArm.rotation.set(...restL_Arm);
+          this.bones.leftForeArm.rotation.set(...restL_Fore);
+          this.bones.leftHand.rotation.set(...restL_Hand);
         } else {
           const targetX = rawL[0];
           const targetY = rawL[1];
@@ -656,17 +1114,16 @@ export class GlbAvatarRig {
             ? Math.max(baseElbowL, 1.55 + (targetY - 0.30) * 0.6)
             : baseElbowL;
 
-          // 4. Forearm Orientation: Negative pitch keeps hands elevated in front of chest/face
+          // 4. Forearm Orientation
           const foreRollL = pose.leftArm?.forearmRoll || 0.25;
           const lForePitch = -0.20 + (targetY > 0.25 ? -(targetY - 0.25) * 0.35 : 0);
 
           this.bones.leftArm.rotation.set(clampedPitchL, 0.10, adductionL);
           this.bones.leftForeArm.rotation.set(lForePitch, foreRollL, lElbow);
 
-          // 5. Wrist
-          const wristPitchL = -0.45 + (pose.leftHand.rotation[0] || 0) * 0.8;
+          // 5. Hand & Wrist Rotation
           this.bones.leftHand.rotation.set(
-            wristPitchL,
+            pose.leftHand.rotation[0],
             pose.leftHand.rotation[1],
             pose.leftHand.rotation[2]
           );
@@ -674,39 +1131,39 @@ export class GlbAvatarRig {
       }
     }
 
-    // 6. Biological Multi-Phalanx Articulation (MCP 45%, PIP 35%, DIP 20%) & Finger Spread
-    const jointWeights = [0.45, 0.35, 0.20, 0.10];
+    // 6. Biological Multi-Phalanx Flexion & Finger Spread
     const spreadR = (pose.rightHand.spread ?? 0.05);
     const spreadL = (pose.leftHand.spread ?? 0.05);
+    const phalanxFlex = [1.35, 1.55, 1.15, 0.6];
 
     for (let f = 0; f < 5; f++) {
-      const curlL = isNamasteSign ? 0 : (isHelpSign ? 0 : (pose.leftHand.curl[f] ?? 0));
+      const curlL = overrideCurlL ? (overrideCurlL[f] ?? 0) : (pose.leftHand.curl[f] ?? 0);
       const leftChain = this.bones.leftFingers[f];
       if (leftChain) {
         for (let p = 0; p < leftChain.length; p++) {
           const b = leftChain[p];
-          const w = jointWeights[p] ?? 0.25;
           if (f === 0) {
-            b.rotation.x = isNamasteSign ? -0.15 : (curlL * 0.35 * w * 2.5);
-            b.rotation.z = isNamasteSign ? 0.05 : (curlL * 0.25 * w * 2.5);
+            b.rotation.x = -curlL * 0.5 * (p === 0 ? 1.0 : 0.7);
+            b.rotation.z = curlL * 0.7 * (p === 0 ? 1.0 : 0.8);
           } else {
-            b.rotation.z = curlL * 1.4 * w;
+            const flex = (phalanxFlex[p] ?? 1.1) * curlL;
+            b.rotation.z = flex;
             b.rotation.y = (f - 2) * spreadL * 0.2 * (p === 0 ? 1 : 0.3);
           }
         }
       }
 
-      const curlR = isNamasteSign ? 0 : (isHelpSign ? (f === 0 ? 0.7 : 0.9) : (pose.rightHand.curl[f] ?? 0));
+      const curlR = overrideCurlR ? (overrideCurlR[f] ?? 0) : (pose.rightHand.curl[f] ?? 0);
       const rightChain = this.bones.rightFingers[f];
       if (rightChain) {
         for (let p = 0; p < rightChain.length; p++) {
           const b = rightChain[p];
-          const w = jointWeights[p] ?? 0.25;
           if (f === 0) {
-            b.rotation.x = isNamasteSign ? -0.15 : (curlR * 0.35 * w * 2.5);
-            b.rotation.z = isNamasteSign ? -0.05 : (-curlR * 0.25 * w * 2.5);
+            b.rotation.x = -curlR * 0.5 * (p === 0 ? 1.0 : 0.7);
+            b.rotation.z = -curlR * 0.7 * (p === 0 ? 1.0 : 0.8);
           } else {
-            b.rotation.z = -curlR * 1.4 * w;
+            const flex = (phalanxFlex[p] ?? 1.1) * curlR;
+            b.rotation.z = -flex;
             b.rotation.y = (f - 2) * -spreadR * 0.2 * (p === 0 ? 1 : 0.3);
           }
         }

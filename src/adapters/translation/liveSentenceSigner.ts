@@ -10,6 +10,7 @@ import { SignClip, SignKeyframe, TrustLevel } from '../../core/types';
 import { lexiconManager } from '../../data/lexicon';
 import { parseAndReorderISL, ISLGrammarAnalysis } from './islGrammarEngine';
 import { webSignLearner } from '../learning/webSignLearner';
+import { neuralSemanticMatcher } from '../nlp/neuralSemanticMatcher';
 
 export interface SentenceSignWord {
   id: string;
@@ -442,7 +443,19 @@ export class LiveSentenceSigner {
         clip = lexiconManager.findClipByGloss(singleGloss);
       }
 
-      // If not yet matched, query Web Sign Learner & Semantic AI Improviser
+      // If not yet matched, query Hugging Face Pre-trained Neural Semantic Matcher
+      if (!clip) {
+        const neuralMatch = neuralSemanticMatcher.findBestMatchSync(single);
+        if (neuralMatch) {
+          const matchedClip = lexiconManager.findClipByGloss(neuralMatch.gloss);
+          if (matchedClip) {
+            clip = matchedClip;
+            singleGloss = neuralMatch.gloss;
+          }
+        }
+      }
+
+      // If still not matched, query Web Sign Learner & Semantic AI Improviser
       if (!clip) {
         const learned = webSignLearner.getOrLearnSign(single);
         if (learned && learned.clip) {

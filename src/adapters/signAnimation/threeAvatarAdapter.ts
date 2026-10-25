@@ -810,6 +810,14 @@ export class ThreeAvatarRig {
 
     const isPrayingNamaste = pose.activeGloss === 'NAMASTE';
     const isSupportHelp = pose.activeGloss === 'HELP';
+    const isThankYouSign = pose.activeGloss === 'THANK-YOU';
+    const isDoctorSign = pose.activeGloss === 'DOCTOR';
+    const isTimeSign = pose.activeGloss === 'TIME';
+    const isPleaseSign = pose.activeGloss === 'PLEASE';
+    const isSorrySign = pose.activeGloss === 'SORRY';
+    const isWaterSign = pose.activeGloss === 'WATER';
+
+    const p = Math.max(0, Math.min(1, pose.progress ?? 0.5));
 
     if (isPrayingNamaste) {
       // Namaste / Prayer Gesture: Hands meet flush at center
@@ -823,6 +831,30 @@ export class ThreeAvatarRig {
       const midZ = Math.max(targetLeft.z, targetRight.z);
       targetLeft.set(midX, targetLeft.y, midZ);
       targetRight.set(midX, targetLeft.y + 0.045, midZ);
+    } else if (isThankYouSign) {
+      targetLeft.set(-0.24, 0.15, 0.1);
+      if (p <= 0.35) {
+        const s = (p / 0.35);
+        targetRight.set(0.02 * s, 0.15 + (0.52 - 0.15) * s, 0.1 + (0.22 - 0.1) * s);
+      } else if (p <= 0.75) {
+        const s = ((p - 0.35) / 0.40);
+        targetRight.set(0.02 + 0.06 * s, 0.52 - 0.18 * s, 0.22 + 0.22 * s);
+      } else {
+        const s = ((p - 0.75) / 0.25);
+        targetRight.set(0.08 + (0.24 - 0.08) * s, 0.34 + (0.15 - 0.34) * s, 0.44 + (0.1 - 0.44) * s);
+      }
+    } else if (isDoctorSign) {
+      targetLeft.set(-0.05, 0.30, 0.32);
+      targetRight.set(-0.05, 0.32, 0.32);
+    } else if (isTimeSign) {
+      targetLeft.set(-0.05, 0.32, 0.30);
+      targetRight.set(-0.05, 0.34, 0.30);
+    } else if (isPleaseSign || isSorrySign) {
+      targetLeft.set(-0.24, 0.15, 0.1);
+      targetRight.set(0.02, 0.36, 0.20);
+    } else if (isWaterSign) {
+      targetLeft.set(-0.24, 0.15, 0.1);
+      targetRight.set(0.04, 0.50, 0.20);
     } else {
       // General close interaction (WORK, MEET, FRIEND)
       if (handDistance < 0.035) {
@@ -847,6 +879,19 @@ export class ThreeAvatarRig {
       // Left palm facing up (+Y), right fist on top facing forward
       this.leftWristGroup.rotation.set(Math.PI / 2, 0, 0);
       this.rightWristGroup.rotation.set(0, 0, 0);
+    } else if (isThankYouSign) {
+      if (p <= 0.35) {
+        this.rightWristGroup.rotation.set(-0.6, 0.3, 0);
+      } else {
+        this.rightWristGroup.rotation.set(0.3, 0, 0);
+      }
+      this.leftWristGroup.rotation.set(0, 0, 0);
+    } else if (isDoctorSign) {
+      this.leftWristGroup.rotation.set(Math.PI / 2, 0, 0);
+      this.rightWristGroup.rotation.set(-Math.PI / 4, 0, 0);
+    } else if (isTimeSign) {
+      this.leftWristGroup.rotation.set(-Math.PI / 4, 0, 0);
+      this.rightWristGroup.rotation.set(-Math.PI / 4, 0, 0);
     } else {
       this.leftWristGroup.rotation.set(
         pose.leftHand.rotation[0],

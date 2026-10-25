@@ -33,6 +33,7 @@ import { AudioWaveformVisualizer } from '../../components/AudioWaveformVisualize
 import { permissionManager } from '../../lib/permissions';
 import { incrementPhraseFrequency, db, applyUserCorrections } from '../../lib/storage';
 import { DOMAIN_PACKS } from '../../data/lexicon/domainPacks';
+import { neuralSemanticMatcher } from '../../adapters/nlp/neuralSemanticMatcher';
 
 export const SpeechToSignView: React.FC = () => {
   const [inputText, setInputText] = useState<string>('Namaste');
@@ -66,6 +67,8 @@ export const SpeechToSignView: React.FC = () => {
   useEffect(() => {
     handleTranslate('Namaste');
     loadSttInfo();
+    // Warm up pre-trained neural semantic matcher in background
+    neuralSemanticMatcher.loadModel().catch(() => {});
 
     return () => {
       // Clean up mic stream if active
@@ -467,6 +470,19 @@ export const SpeechToSignView: React.FC = () => {
                 </span>
               </div>
             )}
+
+            {/* Neural Pre-trained Semantic Model Indicator */}
+            <div className="flex items-center justify-between gap-2 text-[11px] text-slate-400 pt-2 border-t border-slate-800/60">
+              <div className="flex items-center gap-1.5 truncate">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                <span className="truncate">
+                  <strong>Neural NLP:</strong> Hugging Face Xenova/all-MiniLM-L6-v2
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-500/30 shrink-0">
+                76 ISL Concepts
+              </span>
+            </div>
           </div>
 
           {/* STT Error Notification */}

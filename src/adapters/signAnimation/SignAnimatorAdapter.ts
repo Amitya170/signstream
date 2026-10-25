@@ -2,6 +2,9 @@ import { SignClip } from '../../core/types';
 
 export interface InterpolatedPose {
   activeGloss?: string;
+  progress?: number;
+  timeMs?: number;
+  durationMs?: number;
   leftArm: {
     shoulderRotation: [number, number, number];
     elbowAngle: number;
@@ -77,6 +80,9 @@ export function interpolateKeyframes(clip: SignClip, timeMs: number): Interpolat
 
   return {
     activeGloss: clip.gloss,
+    progress: clip.durationMs > 0 ? clampedTime / clip.durationMs : 0,
+    timeMs: clampedTime,
+    durationMs: clip.durationMs,
     leftArm: {
       shoulderRotation: [
         lerpAngle(prev.leftArm?.shoulderRotation?.[0] ?? 0.2, next.leftArm?.shoulderRotation?.[0] ?? 0.2, factor),
@@ -149,6 +155,9 @@ export function interpolateKeyframes(clip: SignClip, timeMs: number): Interpolat
 
 export function getDefaultPose(): InterpolatedPose {
   return {
+    progress: 0,
+    timeMs: 0,
+    durationMs: 1000,
     leftArm: { shoulderRotation: [0.2, 0.2, 0], elbowAngle: 0.5, forearmRoll: 0 },
     rightArm: { shoulderRotation: [0.2, -0.2, 0], elbowAngle: 0.5, forearmRoll: 0 },
     leftHand: { position: [-0.15, -0.1, 0.2], rotation: [0, 0, 0], curl: [0.2, 0.2, 0.2, 0.2, 0.2], spread: 0.1 },
