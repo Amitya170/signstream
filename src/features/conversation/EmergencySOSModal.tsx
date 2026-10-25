@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { AlertOctagon, X, Volume2, ShieldAlert } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AlertOctagon, X, Volume2, ShieldAlert, Zap, ZapOff } from 'lucide-react';
 import { browserSpeechSynthesis } from '../../adapters/tts/browserSpeechSynthesis';
 import { AvatarStage } from '../../components/AvatarStage';
 import { lexiconManager } from '../../data/lexicon';
@@ -10,7 +10,23 @@ interface EmergencySOSModalProps {
 }
 
 export const EmergencySOSModal: React.FC<EmergencySOSModalProps> = ({ isOpen, onClose }) => {
+  const [isStrobeActive, setIsStrobeActive] = useState<boolean>(true);
+  const [strobeState, setStrobeState] = useState<boolean>(false);
   const emergencyClip = lexiconManager.findClipByGloss('EMERGENCY') || lexiconManager.findClipByGloss('HELP');
+
+  // Strobe beacon flash timer (300ms cycle)
+  useEffect(() => {
+    if (!isOpen || !isStrobeActive) {
+      setStrobeState(false);
+      return;
+    }
+
+    const strobeInterval = setInterval(() => {
+      setStrobeState((prev) => !prev);
+    }, 320);
+
+    return () => clearInterval(strobeInterval);
+  }, [isOpen, isStrobeActive]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -46,7 +62,9 @@ export const EmergencySOSModal: React.FC<EmergencySOSModalProps> = ({ isOpen, on
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-between p-4 sm:p-6 bg-red-950/95 backdrop-blur-xl animate-fade-in"
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-between p-4 sm:p-6 transition-colors duration-150 ${
+        strobeState ? 'bg-red-600' : 'bg-red-950/98'
+      } backdrop-blur-xl animate-fade-in`}
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="sos-title"
@@ -65,15 +83,32 @@ export const EmergencySOSModal: React.FC<EmergencySOSModalProps> = ({ isOpen, on
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="min-h-touch px-4 py-2 bg-slate-900/90 hover:bg-slate-800 text-white font-black rounded-xl border-2 border-white/40 flex items-center gap-2 shadow-2xl focus-visible:ring-4 focus-visible:ring-white"
-          aria-label="Dismiss Emergency SOS Alert"
-        >
-          <X className="w-5 h-5 text-red-400" />
-          <span>Exit SOS</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Strobe Beacon Flasher Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsStrobeActive((prev) => !prev)}
+            className={`min-h-touch px-3 py-2 font-bold text-xs rounded-xl border flex items-center gap-1.5 transition-all ${
+              isStrobeActive
+                ? 'bg-amber-400 text-black border-amber-300 shadow-lg'
+                : 'bg-slate-900/80 text-slate-300 border-slate-700'
+            }`}
+            title="Toggle Visual High-Contrast Screen Strobe"
+          >
+            {isStrobeActive ? <Zap className="w-4 h-4 fill-black" /> : <ZapOff className="w-4 h-4" />}
+            <span className="hidden sm:inline">{isStrobeActive ? 'Strobe ON' : 'Strobe OFF'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-touch px-4 py-2 bg-slate-900/90 hover:bg-slate-800 text-white font-black rounded-xl border-2 border-white/40 flex items-center gap-2 shadow-2xl focus-visible:ring-4 focus-visible:ring-white"
+            aria-label="Dismiss Emergency SOS Alert"
+          >
+            <X className="w-5 h-5 text-red-400" />
+            <span>Exit SOS</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Distress Banner with High Contrast */}

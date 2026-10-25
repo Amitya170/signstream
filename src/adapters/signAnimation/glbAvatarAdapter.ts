@@ -436,6 +436,10 @@ export class GlbAvatarRig {
         this.camera.position.set(0, cy + 0.28, this.zoomDistance * 0.55);
         this.camera.lookAt(0, cy + 0.24, 0);
         break;
+      case 'DIAGONAL_45':
+        this.camera.position.set(this.zoomDistance * 0.72, cy + 0.05, this.zoomDistance * 0.72);
+        this.camera.lookAt(0, cy - 0.04, 0);
+        break;
       case 'FREE_ORBIT':
         break;
     }

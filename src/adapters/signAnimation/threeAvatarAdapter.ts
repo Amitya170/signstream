@@ -10,7 +10,7 @@ export interface AvatarOptions {
   visualStyle?: VisualStyle;
 }
 
-export type CameraPreset = 'CHEST_SIGNING' | 'HANDS_FOCUS' | 'FACE_NMM' | 'FREE_ORBIT';
+export type CameraPreset = 'CHEST_SIGNING' | 'HANDS_FOCUS' | 'FACE_NMM' | 'DIAGONAL_45' | 'FREE_ORBIT';
 
 interface FingerRig {
   baseGroup: THREE.Group;
@@ -657,6 +657,11 @@ export class ThreeAvatarRig {
         this.camera.position.set(0, 0.68, 0.95);
         this.camera.lookAt(0, 0.65, 0);
         this.zoomDistance = 0.95;
+        break;
+      case 'DIAGONAL_45':
+        this.camera.position.set(1.3, 0.44, 1.3);
+        this.camera.lookAt(0, 0.38, 0);
+        this.zoomDistance = 1.85;
         break;
       case 'FREE_ORBIT':
         break;

@@ -12,7 +12,9 @@ import {
   Smile,
   Hand,
   Sparkles,
-  UserCheck
+  UserCheck,
+  Info,
+  Share2
 } from 'lucide-react';
 import { SignClip } from '../core/types';
 import {
@@ -24,6 +26,8 @@ import { ThreeAvatarRig, CameraPreset, VisualStyle } from '../adapters/signAnima
 import { GlbAvatarRig, GlbModelId } from '../adapters/signAnimation/glbAvatarAdapter';
 import { SvgAvatarAdapter } from '../adapters/signAnimation/svgAvatarAdapter';
 import { TrustBadge } from './TrustBadge';
+import { MudraInspectorModal } from './MudraInspectorModal';
+import { ClipExporterModal } from './ClipExporterModal';
 
 export type AvatarRenderMode = 'glb' | 'three' | 'svg';
 
@@ -67,6 +71,8 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
   const [visualStyle, setVisualStyle] = useState<VisualStyle>(initialVisualStyle);
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('CHEST_SIGNING');
   const [activeSolverText, setActiveSolverText] = useState<string>('Articulated Signing');
+  const [isMudraOpen, setIsMudraOpen] = useState<boolean>(false);
+  const [isExporterOpen, setIsExporterOpen] = useState<boolean>(false);
 
   const animFrameRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number | null>(null);
@@ -373,7 +379,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
         {(renderMode === 'glb' || renderMode === 'three') && (
           <>
             {/* Camera Perspective Director Toolbar */}
-            <div className="absolute top-14 left-3 flex items-center gap-1 bg-slate-950/90 backdrop-blur-xl p-1 rounded-2xl border border-slate-800/80 text-[11px] shadow-2xl">
+            <div className="absolute top-16 left-3 flex items-center gap-1 bg-slate-950/90 backdrop-blur-xl p-1 rounded-2xl border border-slate-800/80 text-[11px] shadow-2xl z-20">
               <button
                 type="button"
                 onClick={() => {
@@ -427,10 +433,55 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
                 <Smile className="w-3 h-3" />
                 <span>Face</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCameraPreset('DIAGONAL_45');
+                  glbRigRef.current?.applyCameraPreset('DIAGONAL_45');
+                  threeRigRef.current?.applyCameraPreset('DIAGONAL_45');
+                }}
+                className={`px-2.5 py-1 rounded-xl font-bold flex items-center gap-1.5 transition-all ${
+                  cameraPreset === 'DIAGONAL_45'
+                    ? 'bg-brand-600 text-white shadow-md shadow-brand-900/40 ring-1 ring-brand-400/50'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="45° Profile Perspective"
+              >
+                <Compass className="w-3 h-3" />
+                <span>45°</span>
+              </button>
             </div>
 
-            <div className="absolute top-14 right-3 pointer-events-none text-[10px] font-bold tracking-wider uppercase text-slate-400 bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-xl border border-slate-700/60 shadow">
-              360° Drag & Zoom
+            {/* Top Right Quick Tools: Mudra Inspector & Clip Exporter */}
+            <div className="absolute top-16 right-3 flex items-center gap-1.5 pointer-events-auto z-20">
+              {clip && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsMudraOpen(true)}
+                    className="bg-slate-950/90 backdrop-blur-md hover:bg-slate-800 text-teal-300 hover:text-white px-2.5 py-1 rounded-xl border border-teal-500/30 text-[11px] font-bold shadow-lg flex items-center gap-1 transition-all active:scale-95"
+                    title="Inspect ISL Mudra & Handshape Anatomy"
+                  >
+                    <Info className="w-3 h-3 text-teal-400" />
+                    <span>Mudra</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsExporterOpen(true)}
+                    className="bg-slate-950/90 backdrop-blur-md hover:bg-slate-800 text-cyan-300 hover:text-white px-2.5 py-1 rounded-xl border border-cyan-500/30 text-[11px] font-bold shadow-lg flex items-center gap-1 transition-all active:scale-95"
+                    title="Export Sign Video Clip or Snapshot"
+                  >
+                    <Share2 className="w-3 h-3 text-cyan-400" />
+                    <span>Export</span>
+                  </button>
+                </>
+              )}
+
+              <div className="pointer-events-none text-[10px] font-bold tracking-wider uppercase text-slate-400 bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-xl border border-slate-700/60 shadow hidden sm:block">
+                360° Orbit
+              </div>
             </div>
 
             {/* Live Kinematic Solver HUD Badge */}
@@ -469,6 +520,19 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
             className="absolute left-0 top-0 bottom-0 bg-teal-500/40 rounded-l-lg pointer-events-none"
             style={{ width: `${progressPercent}%` }}
           />
+          {/* Keyframe Marker Dots */}
+          {clip &&
+            clip.keyframes.map((kf, i) => {
+              const leftPct = (kf.timeMs / clip.durationMs) * 100;
+              return (
+                <div
+                  key={i}
+                  className="absolute top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-teal-300 shadow-[0_0_4px_rgba(45,212,191,0.8)] pointer-events-none"
+                  style={{ left: `${leftPct}%` }}
+                  title={`Keyframe ${i + 1}: ${kf.timeMs}ms`}
+                />
+              );
+            })}
         </div>
       </div>
 
@@ -574,6 +638,20 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
           </div>
         </div>
       </div>
+
+      {/* ISL Mudra & Handshape Anatomy Inspector Modal */}
+      <MudraInspectorModal
+        clip={clip}
+        isOpen={isMudraOpen}
+        onClose={() => setIsMudraOpen(false)}
+      />
+
+      {/* On-Device Sign Clip Exporter Modal */}
+      <ClipExporterModal
+        clip={clip}
+        isOpen={isExporterOpen}
+        onClose={() => setIsExporterOpen(false)}
+      />
     </div>
   );
 };

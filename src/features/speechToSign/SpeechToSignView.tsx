@@ -33,6 +33,7 @@ import { AudioWaveformVisualizer } from '../../components/AudioWaveformVisualize
 import { permissionManager } from '../../lib/permissions';
 import { incrementPhraseFrequency, db, applyUserCorrections } from '../../lib/storage';
 import { DOMAIN_PACKS } from '../../data/lexicon/domainPacks';
+import { lexiconManager } from '../../data/lexicon';
 import { neuralSemanticMatcher } from '../../adapters/nlp/neuralSemanticMatcher';
 
 export const SpeechToSignView: React.FC = () => {
@@ -209,6 +210,30 @@ export const SpeechToSignView: React.FC = () => {
       }
     }
   };
+
+  // Predictive auto-complete suggestions
+  const suggestions = React.useMemo(() => {
+    const q = inputText.trim().toLowerCase();
+    if (!q || q.length < 2) return [];
+    const all = lexiconManager.getAllClips();
+    const matches: { text: string; gloss: string }[] = [];
+    const seen = new Set<string>();
+
+    for (const c of all) {
+      const en = c.labels.en.toLowerCase();
+      const hi = c.labels.hi;
+      const gloss = c.gloss.toLowerCase();
+      if (en.includes(q) || gloss.includes(q) || hi.includes(q)) {
+        const display = language === 'hi' ? c.labels.hi : c.labels.en;
+        if (!seen.has(display.toLowerCase())) {
+          seen.add(display.toLowerCase());
+          matches.push({ text: display, gloss: c.gloss });
+          if (matches.length >= 6) break;
+        }
+      }
+    }
+    return matches;
+  }, [inputText, language]);
 
   const essentialPhrases = [
     { en: 'Namaste', hi: 'नमस्ते' },
@@ -415,25 +440,53 @@ export const SpeechToSignView: React.FC = () => {
                 )}
               </div>
 
+              {/* Predictive Auto-Complete Chips */}
+              {suggestions.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5 animate-in fade-in duration-150">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-teal-400" /> Suggest:
+                  </span>
+                  {suggestions.map((s) => (
+                    <button
+                      key={s.gloss}
+                      type="button"
+                      onClick={() => {
+                        setInputText(s.text);
+                        handleTranslate(s.text);
+                      }}
+                      className="px-2.5 py-1 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 hover:text-white border border-teal-500/30 text-xs font-semibold transition-all active:scale-95 flex items-center gap-1"
+                    >
+                      <span>{s.text}</span>
+                      <span className="text-[9px] text-teal-400/70 font-mono">({s.gloss})</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-2.5">
-                {/* Mic Button */}
-                <button
-                  type="button"
-                  onClick={handleToggleMic}
-                  className={`min-h-touch px-4 py-3 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border transition-all ${
-                    isListening
-                      ? 'bg-rose-600 hover:bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-900/50 animate-pulse'
-                      : 'bg-slate-800/90 hover:bg-slate-800 text-slate-200 border-slate-700/80 shadow-md'
-                  }`}
-                  aria-label={isListening ? 'Stop microphone' : 'Start speaking'}
-                >
-                  {isListening ? (
-                    <MicOff className="w-4 h-4" />
-                  ) : (
-                    <Mic className="w-4 h-4 text-brand-400" />
+                {/* Mic Button with Glowing Pulse Audio Visualizer */}
+                <div className="relative">
+                  {isListening && (
+                    <span className="absolute -inset-1 rounded-2xl bg-rose-500/40 animate-ping pointer-events-none" />
                   )}
-                  <span>{isListening ? (sttStatus === 'downloading' ? 'Loading...' : 'Listening...') : 'Speak'}</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleToggleMic}
+                    className={`w-full min-h-touch px-4 py-3 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border transition-all relative z-10 ${
+                      isListening
+                        ? 'bg-rose-600 hover:bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-900/50'
+                        : 'bg-slate-800/90 hover:bg-slate-800 text-slate-200 border-slate-700/80 shadow-md'
+                    }`}
+                    aria-label={isListening ? 'Stop microphone' : 'Start speaking'}
+                  >
+                    {isListening ? (
+                      <MicOff className="w-4 h-4 animate-bounce" />
+                    ) : (
+                      <Mic className="w-4 h-4 text-brand-400" />
+                    )}
+                    <span>{isListening ? (sttStatus === 'downloading' ? 'Loading...' : 'Listening...') : 'Speak'}</span>
+                  </button>
+                </div>
 
                 {/* Translate Button */}
                 <button

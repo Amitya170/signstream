@@ -12,13 +12,17 @@ import {
   Globe,
   RefreshCw,
   BookOpen,
-  Layers
+  Layers,
+  Info,
+  Hand
 } from 'lucide-react';
 import { SignClip, LandmarkTemplate, LexiconPack, TrustLevel } from '../../core/types';
 import { lexiconManager } from '../../data/lexicon';
 import { db } from '../../lib/storage';
 import { TrustBadge } from '../../components/TrustBadge';
 import { AvatarStage } from '../../components/AvatarStage';
+import { MudraInspectorModal } from '../../components/MudraInspectorModal';
+import { getMudraAnatomy } from '../../data/lexicon/mudraDictionary';
 import { permissionManager } from '../../lib/permissions';
 import { webSignLearner } from '../../adapters/learning/webSignLearner';
 
@@ -26,7 +30,9 @@ export const LearnView: React.FC = () => {
   const [clips, setClips] = useState<SignClip[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterTrust, setFilterTrust] = useState<string>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [selectedClip, setSelectedClip] = useState<SignClip | null>(null);
+  const [inspectClip, setInspectClip] = useState<SignClip | null>(null);
 
   // Reviewer Sign-off Modal
   const [showSignOffModal, setShowSignOffModal] = useState<boolean>(false);
@@ -116,7 +122,23 @@ export const LearnView: React.FC = () => {
       c.labels.hi.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesTrust = filterTrust === 'ALL' || c.trustLevel === filterTrust;
-    return matchesSearch && matchesTrust;
+
+    let matchesCategory = true;
+    if (categoryFilter === 'EVERYDAY') {
+      matchesCategory = ['NAMASTE', 'THANK_YOU', 'PLEASE', 'YES', 'NO', 'WATER', 'HELLO', 'GOODBYE', 'WELCOME'].some(k => c.gloss.includes(k));
+    } else if (categoryFilter === 'HEALTHCARE') {
+      matchesCategory = ['DOCTOR', 'HOSPITAL', 'MEDICINE', 'HELP', 'PAIN', 'SICK', 'NURSE'].some(k => c.gloss.includes(k));
+    } else if (categoryFilter === 'EMERGENCY') {
+      matchesCategory = ['EMERGENCY', 'HELP', 'POLICE', 'FIRE', 'DANGER', 'STOP'].some(k => c.gloss.includes(k));
+    } else if (categoryFilter === 'TRANSIT') {
+      matchesCategory = ['TRAIN', 'BUS', 'AIRPORT', 'TICKET', 'STATION', 'METRO', 'CAR'].some(k => c.gloss.includes(k));
+    } else if (categoryFilter === 'ALPHABET') {
+      matchesCategory = c.gloss.length === 1 && /^[A-Z]$/.test(c.gloss);
+    } else if (categoryFilter === 'NUMBERS') {
+      matchesCategory = /^[0-9]+$/.test(c.gloss) || ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'].some(k => c.gloss.includes(k));
+    }
+
+    return matchesSearch && matchesTrust && matchesCategory;
   });
 
   // Record Personal Custom Sign
@@ -518,6 +540,32 @@ export const LearnView: React.FC = () => {
 
       {/* Lexicon Explorer Toolbar */}
       <div className="space-y-4">
+        {/* Category Filter Pills */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {[
+            { id: 'ALL', label: 'All Signs' },
+            { id: 'EVERYDAY', label: 'Everyday' },
+            { id: 'HEALTHCARE', label: 'Healthcare' },
+            { id: 'EMERGENCY', label: 'Emergency' },
+            { id: 'TRANSIT', label: 'Transit' },
+            { id: 'ALPHABET', label: 'Alphabet (A-Z)' },
+            { id: 'NUMBERS', label: 'Numbers' }
+          ].map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setCategoryFilter(cat.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                categoryFilter === cat.id
+                  ? 'bg-teal-500/20 text-teal-300 border-teal-500/60 shadow-md shadow-teal-950/40'
+                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -550,11 +598,11 @@ export const LearnView: React.FC = () => {
             <div
               key={c.id}
               onClick={() => setSelectedClip(c)}
-              className="group p-4 rounded-xl bg-slate-900/90 border-2 border-slate-800 hover:border-brand-500/80 cursor-pointer transition-all shadow-md flex flex-col justify-between space-y-3"
+              className="group p-4 rounded-2xl bg-slate-900/90 border border-slate-800/90 hover:border-teal-500/60 cursor-pointer transition-all shadow-md flex flex-col justify-between space-y-3 hover:shadow-[0_0_20px_rgba(20,184,166,0.15)]"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-white text-base group-hover:text-brand-300 transition-colors">
+                  <h3 className="font-bold text-white text-base group-hover:text-teal-300 transition-colors">
                     {c.gloss}
                   </h3>
                   <TrustBadge level={c.trustLevel} showDetailsButton={false} />
@@ -562,12 +610,30 @@ export const LearnView: React.FC = () => {
                 <p className="text-xs text-slate-400 mt-1">
                   {c.labels.en} • {c.labels.hi}
                 </p>
+
+                {/* Mudra Anatomy Chip */}
+                <div className="mt-2.5 flex items-center justify-between gap-1">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-teal-950/50 text-teal-300 border border-teal-500/30 truncate max-w-[170px]">
+                    ✋ {getMudraAnatomy(c.gloss).sanskritName.split('(')[0].trim()}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setInspectClip(c);
+                    }}
+                    className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-teal-300 transition-colors"
+                    title="Inspect Mudra Anatomy"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
               <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
                 <span>{c.durationMs}ms</span>
-                <span className="font-bold text-brand-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                  <Play className="w-3.5 h-3.5" /> Play
+                <span className="font-bold text-teal-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                  <Play className="w-3.5 h-3.5" /> Preview 3D
                 </span>
               </div>
             </div>
@@ -731,6 +797,13 @@ export const LearnView: React.FC = () => {
           <p className="text-xs text-brand-300 font-semibold">{importStatus}</p>
         )}
       </div>
+
+      {/* ISL Mudra & Handshape Anatomy Inspector Modal */}
+      <MudraInspectorModal
+        clip={inspectClip}
+        isOpen={!!inspectClip}
+        onClose={() => setInspectClip(null)}
+      />
     </div>
   );
 };
