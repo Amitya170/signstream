@@ -444,23 +444,43 @@ export class LiveSentenceSigner {
       }
 
       if (matchedLetterClips.length > 0) {
-        // Compound the letters into a single fingerspelled unit
-        let fsDuration = 0;
-        for (const lClip of matchedLetterClips) {
-          fsDuration += lClip.durationMs + 100;
-        }
-
-        // Create virtual fingerspelled word clip
+        // Compound the letters into a fluid continuous fingerspelled unit
         const fsKeyframes: SignKeyframe[] = [];
-        let fsOffset = 0;
-        for (const lClip of matchedLetterClips) {
-          for (const kf of lClip.keyframes) {
-            fsKeyframes.push({
-              ...kf,
-              timeMs: fsOffset + kf.timeMs
-            });
+        let fsTimeline = 0;
+        const letterHoldMs = 380;
+        const letterBlendMs = 140;
+
+        for (let l = 0; l < matchedLetterClips.length; l++) {
+          const lClip = matchedLetterClips[l];
+          const activeKf = lClip.keyframes[1] || lClip.keyframes[0];
+
+          if (l === 0) {
+            fsKeyframes.push({ ...lClip.keyframes[0], timeMs: 0 });
+            fsTimeline = 280;
           }
-          fsOffset += lClip.durationMs + 100;
+
+          fsKeyframes.push({
+            ...activeKf,
+            timeMs: fsTimeline
+          });
+
+          const holdKf = lClip.keyframes[2] || activeKf;
+          fsKeyframes.push({
+            ...holdKf,
+            timeMs: fsTimeline + letterHoldMs
+          });
+
+          fsTimeline += letterHoldMs;
+
+          if (l === matchedLetterClips.length - 1) {
+            fsTimeline += 350;
+            fsKeyframes.push({
+              ...lClip.keyframes[lClip.keyframes.length - 1],
+              timeMs: fsTimeline
+            });
+          } else {
+            fsTimeline += letterBlendMs;
+          }
         }
 
         const fsCompositeClip: SignClip = {
@@ -468,7 +488,7 @@ export class LiveSentenceSigner {
           version: '2.0.0',
           gloss: `SPELL:${letterChars.join('')}`,
           labels: { en: `Fingerspell "${single}"`, hi: `अक्षर वर्तनी: "${single}"` },
-          durationMs: fsDuration,
+          durationMs: fsTimeline,
           trustLevel: 'VERIFIED',
           provenance: {
             source: 'ISL Two-Handed Manual Alphabet (A-Z)',
@@ -484,20 +504,20 @@ export class LiveSentenceSigner {
           originalWord: single,
           islGloss: `SPELL:${letterChars.join('')}`,
           startTimeMs: currentTimelineMs,
-          durationMs: fsDuration,
+          durationMs: fsTimeline,
           isFingerspelled: true,
           fingerspellLetters: letterChars,
           trustLevel: 'VERIFIED',
           clip: fsCompositeClip
         });
 
-        currentTimelineMs += fsDuration + transitionGapMs;
+        currentTimelineMs += fsTimeline + transitionGapMs;
       }
 
       i += 1;
     }
 
-    // 2. Synthesize Continuous Co-articulated Keyframes
+    // 2. Synthesize Continuous Co-articulated Keyframes (Zero Inter-Word Flailing)
     const continuousKeyframes: SignKeyframe[] = [];
     let browVal = 0;
     let headRot: [number, number, number] = [0, 0, 0];
@@ -514,18 +534,95 @@ export class LiveSentenceSigner {
       headRot = [0, 0.22, 0]; // Negation: Head shake
     }
 
-    for (const w of words) {
-      for (const kf of w.clip.keyframes) {
-        continuousKeyframes.push({
-          ...kf,
-          timeMs: w.startTimeMs + kf.timeMs,
-          face: {
-            mouthState: kf.face?.mouthState || (grammar.isNegated ? 'tight-lips' : 'neutral'),
-            browState: browVal !== 0 ? browVal : kf.face?.browState || 0,
-            headRotation: headRot[0] !== 0 || headRot[1] !== 0 ? headRot : kf.face?.headRotation
-          }
-        });
+    let finalTimelineMs = 0;
+
+    if (words.length <= 1) {
+      // Single Word Playback
+      for (const w of words) {
+        w.startTimeMs = 0;
+        w.durationMs = w.clip.durationMs;
+        for (const kf of w.clip.keyframes) {
+          continuousKeyframes.push({
+            ...kf,
+            timeMs: kf.timeMs,
+            face: {
+              mouthState: kf.face?.mouthState || (grammar.isNegated ? 'tight-lips' : 'neutral'),
+              browState: browVal !== 0 ? browVal : kf.face?.browState || 0,
+              headRotation: headRot[0] !== 0 || headRot[1] !== 0 ? headRot : kf.face?.headRotation
+            }
+          });
+        }
+        finalTimelineMs = w.clip.durationMs;
       }
+    } else {
+      // Multi-Word Sentence Co-articulation
+      // Arms stay in the active signing space in front of the chest across word boundaries
+      let timeline = 0;
+      const blendGapMs = 240;
+
+      for (let idx = 0; idx < words.length; idx++) {
+        const w = words[idx];
+        const kfs = w.clip.keyframes;
+        const isFirst = (idx === 0);
+        const isLast = (idx === words.length - 1);
+
+        const activeKfs = kfs.slice(1, kfs.length - 1);
+        const activeOrigin = kfs[1]?.timeMs ?? 0;
+
+        if (isFirst) {
+          // Sentence starts from rest pose at t=0
+          const restKf = kfs[0] ?? activeKfs[0];
+          continuousKeyframes.push({
+            ...restKf,
+            timeMs: 0,
+            face: {
+              mouthState: restKf.face?.mouthState || (grammar.isNegated ? 'tight-lips' : 'neutral'),
+              browState: browVal !== 0 ? browVal : restKf.face?.browState || 0,
+              headRotation: headRot[0] !== 0 || headRot[1] !== 0 ? headRot : restKf.face?.headRotation
+            }
+          });
+          timeline = activeOrigin;
+        }
+
+        const wordStart = timeline;
+        w.startTimeMs = isFirst ? 0 : wordStart;
+
+        for (let k = 0; k < activeKfs.length; k++) {
+          const kf = activeKfs[k];
+          const rel = kf.timeMs - activeOrigin;
+          continuousKeyframes.push({
+            ...kf,
+            timeMs: wordStart + rel,
+            face: {
+              mouthState: kf.face?.mouthState || (grammar.isNegated ? 'tight-lips' : 'neutral'),
+              browState: browVal !== 0 ? browVal : kf.face?.browState || 0,
+              headRotation: headRot[0] !== 0 || headRot[1] !== 0 ? headRot : kf.face?.headRotation
+            }
+          });
+        }
+
+        const activeDur = (activeKfs[activeKfs.length - 1]?.timeMs ?? activeOrigin) - activeOrigin;
+        timeline = wordStart + activeDur;
+        w.durationMs = (timeline - w.startTimeMs) + (isLast ? 0 : blendGapMs);
+
+        if (isLast) {
+          // Only return to rest at the very conclusion of the entire sentence
+          timeline += 450;
+          const finalRest = kfs[kfs.length - 1] ?? activeKfs[activeKfs.length - 1];
+          continuousKeyframes.push({
+            ...finalRest,
+            timeMs: timeline,
+            face: {
+              mouthState: 'neutral',
+              browState: 0,
+              headRotation: [0, 0, 0]
+            }
+          });
+        } else {
+          timeline += blendGapMs;
+        }
+      }
+      finalTimelineMs = timeline;
     }
 
     const glossChain = words.map((w) => w.islGloss).join('  ➔  ');
@@ -538,7 +635,7 @@ export class LiveSentenceSigner {
         en: `Live Sentence: "${trimmed}"`,
         hi: `लाइव वाक्य: "${trimmed}"`
       },
-      durationMs: Math.max(1200, currentTimelineMs),
+      durationMs: Math.max(1200, finalTimelineMs),
       trustLevel: 'VERIFIED',
       provenance: {
         source: 'SignStream Live Sentence Co-articulation Engine',
@@ -565,8 +662,11 @@ export class LiveSentenceSigner {
    */
   public getActiveWordAtTime(pkg: LiveSentencePackage, timeMs: number): SentenceSignWord | null {
     if (!pkg.words.length) return null;
-    for (const w of pkg.words) {
-      if (timeMs >= w.startTimeMs && timeMs < w.startTimeMs + w.durationMs + 180) {
+    for (let i = 0; i < pkg.words.length; i++) {
+      const w = pkg.words[i];
+      const nextWord = pkg.words[i + 1];
+      const endTimeMs = nextWord ? nextWord.startTimeMs : w.startTimeMs + w.durationMs;
+      if (timeMs >= w.startTimeMs && timeMs < endTimeMs) {
         return w;
       }
     }

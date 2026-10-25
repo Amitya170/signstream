@@ -585,13 +585,13 @@ export class ThreeAvatarRig {
       this.mouthMesh.scale.set(1.0, 1.0, 1);
     }
 
-    // 6. Left Arm Kinematics
+    // 6. Left Arm Kinematics (Forward Signing Space Orientation)
     this.leftClavicle.rotation.set(
-      pose.leftArm.shoulderRotation[0],
+      -pose.leftArm.shoulderRotation[0],
       pose.leftArm.shoulderRotation[1],
       pose.leftArm.shoulderRotation[2]
     );
-    this.leftElbowGroup.rotation.set(pose.leftArm.elbowAngle, 0, pose.leftArm.forearmRoll);
+    this.leftElbowGroup.rotation.set(-pose.leftArm.elbowAngle, pose.leftArm.forearmRoll, 0);
     this.leftWristGroup.position.set(
       pose.leftHand.position[0] * 0.08,
       -0.26 + pose.leftHand.position[1] * 0.06,
@@ -624,13 +624,13 @@ export class ThreeAvatarRig {
       }
     }
 
-    // 7. Right Arm Kinematics
+    // 7. Right Arm Kinematics (Forward Signing Space Orientation)
     this.rightClavicle.rotation.set(
-      pose.rightArm.shoulderRotation[0],
+      -pose.rightArm.shoulderRotation[0],
       pose.rightArm.shoulderRotation[1],
       pose.rightArm.shoulderRotation[2]
     );
-    this.rightElbowGroup.rotation.set(pose.rightArm.elbowAngle, 0, pose.rightArm.forearmRoll);
+    this.rightElbowGroup.rotation.set(-pose.rightArm.elbowAngle, pose.rightArm.forearmRoll, 0);
     this.rightWristGroup.position.set(
       pose.rightHand.position[0] * 0.08,
       -0.26 + pose.rightHand.position[1] * 0.06,

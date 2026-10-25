@@ -96,7 +96,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
     }
   }, [skinTone, outfitColor, backgroundColor]);
 
-  // Main Animation Loop
+  // Main Animation Loop with Direct Synchronous 60 FPS RAF Execution
   const animate = useCallback((timestamp: number) => {
     if (!lastTimestampRef.current) lastTimestampRef.current = timestamp;
     const delta = (timestamp - lastTimestampRef.current) * speed;
@@ -113,12 +113,27 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
         }
       }
       currentTimeMsRef.current = nextTime;
+
+      // Direct synchronous pose update inside RAF without cascading effect delays
+      const pose = interpolateKeyframes(clip, nextTime);
+      if (rigRef.current) {
+        rigRef.current.updatePose(pose);
+      }
+      if (renderMode === 'svg') {
+        setCurrentPose(pose);
+      }
+
       setCurrentTimeMs(nextTime);
       onTimeUpdateRef.current?.(nextTime);
+    } else if (!clip) {
+      const def = getDefaultPose();
+      if (rigRef.current) {
+        rigRef.current.updatePose(def);
+      }
     }
 
     animFrameRef.current = requestAnimationFrame(animate);
-  }, [clip, isPlaying, isLooping, speed]);
+  }, [clip, isPlaying, isLooping, speed, renderMode]);
 
   useEffect(() => {
     lastTimestampRef.current = null;
@@ -134,31 +149,29 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
       currentTimeMsRef.current = seekTimeMs;
       setCurrentTimeMs(seekTimeMs);
       onTimeUpdateRef.current?.(seekTimeMs);
+      if (clip) {
+        const pose = interpolateKeyframes(clip, seekTimeMs);
+        if (rigRef.current) rigRef.current.updatePose(pose);
+        if (renderMode === 'svg') setCurrentPose(pose);
+      }
     }
-  }, [seekTimeMs]);
+  }, [seekTimeMs, clip, renderMode]);
 
-  // Update current pose based on currentTimeMs
-  useEffect(() => {
-    if (!clip) {
-      const defaultP = getDefaultPose();
-      setCurrentPose(defaultP);
-      if (rigRef.current) rigRef.current.updatePose(defaultP);
-      return;
-    }
-
-    const pose = interpolateKeyframes(clip, currentTimeMs);
-    setCurrentPose(pose);
-    if (rigRef.current) {
-      rigRef.current.updatePose(pose);
-    }
-  }, [clip, currentTimeMs]);
-
-  // Reset playhead when clip changes
+  // Reset playhead and pose when clip changes
   useEffect(() => {
     currentTimeMsRef.current = 0;
     setCurrentTimeMs(0);
     setIsPlaying(true);
-  }, [clip?.id]);
+    if (clip) {
+      const pose = interpolateKeyframes(clip, 0);
+      if (rigRef.current) rigRef.current.updatePose(pose);
+      if (renderMode === 'svg') setCurrentPose(pose);
+    } else {
+      const def = getDefaultPose();
+      if (rigRef.current) rigRef.current.updatePose(def);
+      if (renderMode === 'svg') setCurrentPose(def);
+    }
+  }, [clip?.id, renderMode]);
 
   const handleStepForward = () => {
     if (!clip) return;
@@ -166,6 +179,9 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
     const stepped = Math.min(clip.durationMs, currentTimeMsRef.current + 120);
     currentTimeMsRef.current = stepped;
     setCurrentTimeMs(stepped);
+    const pose = interpolateKeyframes(clip, stepped);
+    if (rigRef.current) rigRef.current.updatePose(pose);
+    if (renderMode === 'svg') setCurrentPose(pose);
     onTimeUpdateRef.current?.(stepped);
   };
 
@@ -173,6 +189,11 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
     currentTimeMsRef.current = 0;
     setCurrentTimeMs(0);
     setIsPlaying(true);
+    if (clip) {
+      const pose = interpolateKeyframes(clip, 0);
+      if (rigRef.current) rigRef.current.updatePose(pose);
+      if (renderMode === 'svg') setCurrentPose(pose);
+    }
     onTimeUpdateRef.current?.(0);
   };
 
@@ -292,7 +313,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
         {clip && (
           <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-slate-800/80">
             <div
-              className="h-full bg-brand-500 transition-all duration-75"
+              className="h-full bg-brand-500"
               style={{
                 width: `${(currentTimeMs / clip.durationMs) * 100}%`
               }}
