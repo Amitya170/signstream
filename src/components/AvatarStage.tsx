@@ -10,7 +10,8 @@ import {
   Compass,
   Camera,
   Smile,
-  Hand
+  Hand,
+  Sparkles
 } from 'lucide-react';
 import { SignClip } from '../core/types';
 import {
@@ -18,13 +19,14 @@ import {
   getDefaultPose,
   InterpolatedPose
 } from '../adapters/signAnimation/SignAnimatorAdapter';
-import { ThreeAvatarRig, CameraPreset } from '../adapters/signAnimation/threeAvatarAdapter';
+import { ThreeAvatarRig, CameraPreset, VisualStyle } from '../adapters/signAnimation/threeAvatarAdapter';
 import { SvgAvatarAdapter } from '../adapters/signAnimation/svgAvatarAdapter';
 import { TrustBadge } from './TrustBadge';
 
 interface AvatarStageProps {
   clip: SignClip | null;
   mode?: 'three' | 'svg';
+  visualStyle?: VisualStyle;
   skinTone?: string;
   outfitColor?: string;
   backgroundColor?: string;
@@ -37,6 +39,7 @@ interface AvatarStageProps {
 export const AvatarStage: React.FC<AvatarStageProps> = ({
   clip,
   mode = 'three',
+  visualStyle: initialVisualStyle = 'STUDIO_HUMAN',
   skinTone = '#e0ac69',
   outfitColor = '#0d9488',
   backgroundColor = '#0b0f19',
@@ -54,6 +57,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
   const [currentTimeMs, setCurrentTimeMs] = useState<number>(0);
   const [currentPose, setCurrentPose] = useState<InterpolatedPose>(getDefaultPose());
   const [renderMode, setRenderMode] = useState<'three' | 'svg'>(mode);
+  const [visualStyle, setVisualStyle] = useState<VisualStyle>(initialVisualStyle);
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('CHEST_SIGNING');
 
   const animFrameRef = useRef<number | null>(null);
@@ -71,7 +75,8 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
       const rig = new ThreeAvatarRig(threeContainerRef.current, {
         skinTone,
         outfitColor,
-        backgroundColor
+        backgroundColor,
+        visualStyle
       });
       rigRef.current = rig;
 
@@ -89,12 +94,12 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
     }
   }, [renderMode, backgroundColor]);
 
-  // Update rig material options
+  // Update rig material options and visual style
   useEffect(() => {
     if (rigRef.current) {
-      rigRef.current.updateAppearance({ skinTone, outfitColor, backgroundColor });
+      rigRef.current.updateAppearance({ skinTone, outfitColor, backgroundColor, visualStyle });
     }
-  }, [skinTone, outfitColor, backgroundColor]);
+  }, [skinTone, outfitColor, backgroundColor, visualStyle]);
 
   // Main Animation Loop with Direct Synchronous 60 FPS RAF Execution
   const animate = useCallback((timestamp: number) => {
@@ -223,15 +228,32 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={() => setRenderMode(renderMode === 'three' ? 'svg' : 'three')}
-          className="pointer-events-auto p-1.5 bg-slate-900/80 hover:bg-slate-800 backdrop-blur-md rounded-lg text-xs font-semibold flex items-center gap-1 text-slate-200 border border-slate-700 focus-visible:ring-2"
-          aria-label={`Toggle avatar mode. Current: ${renderMode === 'three' ? '3D Rig' : '2D SVG'}`}
-        >
-          <Layers className="w-3.5 h-3.5" />
-          <span>{renderMode === 'three' ? '3D' : '2D'}</span>
-        </button>
+        <div className="flex items-center gap-1.5 pointer-events-auto">
+          <button
+            type="button"
+            onClick={() => setVisualStyle(v => (v === 'STUDIO_HUMAN' ? 'CYBER_HOLOGRAM' : 'STUDIO_HUMAN'))}
+            className={`px-2.5 py-1 backdrop-blur-md rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all ${
+              visualStyle === 'CYBER_HOLOGRAM'
+                ? 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 shadow-[0_0_12px_rgba(6,182,212,0.4)]'
+                : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border-slate-700'
+            }`}
+            aria-label={`Toggle avatar visual style. Current: ${visualStyle === 'CYBER_HOLOGRAM' ? 'Cyber Hologram' : 'Studio Human'}`}
+            title="Toggle between Realistic Studio Human and Cyber Hologram digital aesthetics"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden sm:inline">{visualStyle === 'CYBER_HOLOGRAM' ? 'Hologram' : 'Human'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setRenderMode(renderMode === 'three' ? 'svg' : 'three')}
+            className="p-1.5 bg-slate-900/80 hover:bg-slate-800 backdrop-blur-md rounded-lg text-xs font-semibold flex items-center gap-1 text-slate-200 border border-slate-700 focus-visible:ring-2"
+            aria-label={`Toggle avatar mode. Current: ${renderMode === 'three' ? '3D Rig' : '2D SVG'}`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>{renderMode === 'three' ? '3D' : '2D'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Avatar Viewport */}
@@ -243,6 +265,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
             pose={currentPose}
             skinTone={skinTone}
             outfitColor={outfitColor}
+            visualStyle={visualStyle}
             className="w-full h-full max-h-72"
           />
         )}
