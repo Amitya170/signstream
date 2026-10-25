@@ -11,22 +11,34 @@ const PHRASE_TO_GLOSS_MAP: Record<string, string> = {
   me: 'I',
   my: 'I',
   myself: 'I',
-  we: 'I',
-  us: 'I',
+  we: 'WE',
+  us: 'WE',
+  our: 'WE',
+  ours: 'WE',
   you: 'YOU',
   your: 'YOU',
   yours: 'YOU',
-  he: 'YOU',
-  she: 'YOU',
-  they: 'YOU',
+  he: 'HE',
+  him: 'HE',
+  his: 'HE',
+  she: 'SHE',
+  her: 'SHE',
+  hers: 'SHE',
+  they: 'THEY',
+  them: 'THEY',
+  their: 'THEY',
+  theirs: 'THEY',
+  it: 'IT',
+  its: 'IT',
 
   // Modals & Needs
   want: 'WANT',
   wants: 'WANT',
-  need: 'WANT',
-  needs: 'WANT',
-  require: 'WANT',
-  requires: 'WANT',
+  need: 'NEED',
+  needs: 'NEED',
+  require: 'NEED',
+  requires: 'NEED',
+  necessary: 'NEED',
   can: 'CAN',
   could: 'CAN',
   able: 'CAN',
@@ -42,7 +54,7 @@ const PHRASE_TO_GLOSS_MAP: Record<string, string> = {
   'dont know': 'DONT-KNOW',
   "don't know": 'DONT-KNOW',
   call: 'CALL',
-  phone: 'CALL',
+  phone: 'PHONE',
   police: 'POLICE',
   cop: 'POLICE',
   station: 'STATION',
@@ -77,10 +89,14 @@ const PHRASE_TO_GLOSS_MAP: Record<string, string> = {
   'help me': 'HELP',
   'need help': 'HELP',
   water: 'WATER',
-  'drink water': 'WATER',
+  drink: 'DRINK',
+  drinking: 'DRINK',
+  drank: 'DRINK',
   food: 'FOOD',
   eat: 'FOOD',
-  hungry: 'FOOD',
+  eating: 'FOOD',
+  hungry: 'HUNGRY',
+  starving: 'HUNGRY',
   doctor: 'DOCTOR',
   dr: 'DOCTOR',
   physician: 'DOCTOR',
@@ -183,12 +199,37 @@ const PHRASE_TO_GLOSS_MAP: Record<string, string> = {
   मेरा: 'I',
   मेरी: 'I',
   मेरे: 'I',
-  हम: 'I',
-  हमें: 'I',
+  हम: 'WE',
+  हमें: 'WE',
+  हमारा: 'WE',
+  हमारी: 'WE',
+  हमारे: 'WE',
   आप: 'YOU',
   आपका: 'YOU',
   तुम: 'YOU',
   तुम्हारा: 'YOU',
+  वह: 'HE',
+  उसने: 'HE',
+  उसको: 'HE',
+  उसे: 'HE',
+  उसका: 'HE',
+  उसकी: 'SHE',
+  उसके: 'HE',
+  वे: 'THEY',
+  उन्होंने: 'THEY',
+  उन्हें: 'THEY',
+  उनका: 'THEY',
+  उनके: 'THEY',
+  उनको: 'THEY',
+  यह: 'IT',
+  इस: 'IT',
+  पीना: 'DRINK',
+  पियो: 'DRINK',
+  भूख: 'HUNGRY',
+  भूखा: 'HUNGRY',
+  भूखी: 'HUNGRY',
+  ज़रूरत: 'NEED',
+  आवश्यकता: 'NEED',
   चाहिए: 'WANT',
   चाहिएँ: 'WANT',
   सकता: 'CAN',
@@ -235,7 +276,6 @@ const PHRASE_TO_GLOSS_MAP: Record<string, string> = {
   जल: 'WATER',
   खाना: 'FOOD',
   भोजन: 'FOOD',
-  भूख: 'FOOD',
   डॉक्टर: 'DOCTOR',
   चिकित्सक: 'DOCTOR',
   अस्पताल: 'HOSPITAL',
@@ -335,17 +375,24 @@ export class LexiconLookupTranslator implements IslTranslatorAdapter {
 
     // 1. Direct whole-phrase lookup
     const directGloss = PHRASE_TO_GLOSS_MAP[cleanLower];
+    let directClip: SignClip | undefined;
     if (directGloss) {
-      const clip = lexiconManager.findClipByGloss(directGloss);
-      if (clip) {
-        return {
-          fullMatch: true,
-          inputPhrase: input,
-          matchedSignClips: [clip],
-          unsupportedTokens: [],
-          explanation: `Exact ISL sign match found for "${input}" (Trust Level: ${clip.trustLevel}).`
-        };
+      directClip = lexiconManager.findClipByGloss(directGloss);
+    }
+    if (!directClip) {
+      const learned = webSignLearner.getOrLearnSign(cleanLower);
+      if (learned && learned.clip) {
+        directClip = learned.clip;
       }
+    }
+    if (directClip) {
+      return {
+        fullMatch: true,
+        inputPhrase: input,
+        matchedSignClips: [directClip],
+        unsupportedTokens: [],
+        explanation: `Exact ISL sign match found for "${input}" (Trust Level: ${directClip.trustLevel}).`
+      };
     }
 
     // 2. ISL Grammatical Reordering & Tokenization

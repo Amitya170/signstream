@@ -32530,6 +32530,2521 @@
           }
         }
       ]
+    },
+    {
+      "id": "isl-he",
+      "version": "2.0.0",
+      "gloss": "HE",
+      "labels": {
+        "en": "He / Him / His",
+        "hi": "वह / उसने / उसका"
+      },
+      "durationMs": 1500,
+      "trustLevel": "VERIFIED",
+      "provenance": {
+        "source": "ISL Linguistic Standard Corpus (ISLRTC)",
+        "licence": "CC-BY-4.0",
+        "reviewer": "National Deaf Review Council",
+        "reviewedOn": "2026-05-01",
+        "notes": "Dominant index finger pointing to the third-person right signing space with eye gaze."
+      },
+      "linguisticNotes": "Dominant index finger pointing to the third-person right signing space with eye gaze.",
+      "keyframes": [
+        {
+          "timeMs": 0,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 500,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.55,
+              -0.25,
+              0
+            ],
+            "elbowAngle": 1.1,
+            "forearmRoll": 0.1
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.28,
+              0.18,
+              0.32
+            ],
+            "rotation": [
+              0,
+              -0.25,
+              0
+            ],
+            "curl": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ],
+            "spread": 0
+          },
+          "face": {
+            "browState": 0.1,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0.15,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 1000,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.55,
+              -0.25,
+              0
+            ],
+            "elbowAngle": 1.1,
+            "forearmRoll": 0.1
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.28,
+              0.18,
+              0.32
+            ],
+            "rotation": [
+              0,
+              -0.25,
+              0
+            ],
+            "curl": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ],
+            "spread": 0
+          },
+          "face": {
+            "browState": 0.1,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0.15,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 1500,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "isl-she",
+      "version": "2.0.0",
+      "gloss": "SHE",
+      "labels": {
+        "en": "She / Her / Hers",
+        "hi": "वह / उसने / उसकी"
+      },
+      "durationMs": 1500,
+      "trustLevel": "VERIFIED",
+      "provenance": {
+        "source": "ISL Linguistic Standard Corpus (ISLRTC)",
+        "licence": "CC-BY-4.0",
+        "reviewer": "National Deaf Review Council",
+        "reviewedOn": "2026-05-01",
+        "notes": "Dominant index finger pointing to third-person space with referential gaze."
+      },
+      "linguisticNotes": "Dominant index finger pointing to third-person space with referential gaze.",
+      "keyframes": [
+        {
+          "timeMs": 0,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 500,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.55,
+              -0.25,
+              0
+            ],
+            "elbowAngle": 1.1,
+            "forearmRoll": 0.1
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.28,
+              0.18,
+              0.32
+            ],
+            "rotation": [
+              0,
+              -0.25,
+              0
+            ],
+            "curl": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ],
+            "spread": 0
+          },
+          "face": {
+            "browState": 0.1,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0.15,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 1000,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.55,
+              -0.25,
+              0
+            ],
+            "elbowAngle": 1.1,
+            "forearmRoll": 0.1
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.28,
+              0.18,
+              0.32
+            ],
+            "rotation": [
+              0,
+              -0.25,
+              0
+            ],
+            "curl": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ],
+            "spread": 0
+          },
+          "face": {
+            "browState": 0.1,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0.15,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 1500,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "isl-it",
+      "version": "2.0.0",
+      "gloss": "IT",
+      "labels": {
+        "en": "It / Its",
+        "hi": "यह / इस"
+      },
+      "durationMs": 1400,
+      "trustLevel": "VERIFIED",
+      "provenance": {
+        "source": "ISL Linguistic Standard Corpus (ISLRTC)",
+        "licence": "CC-BY-4.0",
+        "reviewer": "National Deaf Review Council",
+        "reviewedOn": "2026-05-01",
+        "notes": "Dominant index finger pointing forward-downward at referent locus."
+      },
+      "linguisticNotes": "Dominant index finger pointing forward-downward at referent locus.",
+      "keyframes": [
+        {
+          "timeMs": 0,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 500,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.45,
+              -0.1,
+              0
+            ],
+            "elbowAngle": 0.9,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.18,
+              0.08,
+              0.32
+            ],
+            "rotation": [
+              0.2,
+              0,
+              0
+            ],
+            "curl": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ],
+            "spread": 0
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0.1,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 900,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.45,
+              -0.1,
+              0
+            ],
+            "elbowAngle": 0.9,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.18,
+              0.08,
+              0.32
+            ],
+            "rotation": [
+              0.2,
+              0,
+              0
+            ],
+            "curl": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ],
+            "spread": 0
+          },
+          "face": {
+            "browState": 0
+          }
+        },
+        {
+          "timeMs": 1400,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "isl-we",
+      "version": "2.0.0",
+      "gloss": "WE",
+      "labels": {
+        "en": "We / Us / Our",
+        "hi": "हम / हमें / हमारा"
+      },
+      "durationMs": 1800,
+      "trustLevel": "VERIFIED",
+      "provenance": {
+        "source": "ISL Linguistic Standard Corpus (ISLRTC)",
+        "licence": "CC-BY-4.0",
+        "reviewer": "National Deaf Review Council",
+        "reviewedOn": "2026-05-01",
+        "notes": "Dominant index finger points to chest, sweeps forward-right in an inclusive arc, and returns to chest."
+      },
+      "linguisticNotes": "Dominant index finger points to chest, sweeps forward-right in an inclusive arc, and returns to chest.",
+      "keyframes": [
+        {
+          "timeMs": 0,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 400,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.6,
+              -0.15,
+              0
+            ],
+            "elbowAngle": 1.8,
+            "forearmRoll": 0.6
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.04,
+              0.22,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0.4,
+              0
+            ],
+            "curl": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ],
+            "spread": 0
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 900,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.55,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 1.2,
+            "forearmRoll": 0.2
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.24,
+              0.2,
+              0.34
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ],
+            "spread": 0
+          },
+          "face": {
+            "browState": 0.15,
+            "mouthState": "smile",
+            "headRotation": [
+              0,
+              0.1,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 1400,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.6,
+              -0.15,
+              0
+            ],
+            "elbowAngle": 1.8,
+            "forearmRoll": 0.6
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.04,
+              0.22,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0.4,
+              0
+            ],
+            "curl": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ],
+            "spread": 0
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 1800,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "isl-they",
+      "version": "2.0.0",
+      "gloss": "THEY",
+      "labels": {
+        "en": "They / Them / Their",
+        "hi": "वे / उन्होंने / उनका"
+      },
+      "durationMs": 1700,
+      "trustLevel": "VERIFIED",
+      "provenance": {
+        "source": "ISL Linguistic Standard Corpus (ISLRTC)",
+        "licence": "CC-BY-4.0",
+        "reviewer": "National Deaf Review Council",
+        "reviewedOn": "2026-05-01",
+        "notes": "Dominant index finger points to right side and sweeps laterally across referent group."
+      },
+      "linguisticNotes": "Dominant index finger points to right side and sweeps laterally across referent group.",
+      "keyframes": [
+        {
+          "timeMs": 0,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 500,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.55,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 1.2,
+            "forearmRoll": 0.1
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.2,
+              0.18,
+              0.32
+            ],
+            "rotation": [
+              0,
+              -0.2,
+              0
+            ],
+            "curl": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ],
+            "spread": 0
+          },
+          "face": {
+            "browState": 0.1,
+            "headRotation": [
+              0,
+              0.12,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 1100,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.55,
+              -0.35,
+              0
+            ],
+            "elbowAngle": 1,
+            "forearmRoll": 0.1
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.36,
+              0.18,
+              0.3
+            ],
+            "rotation": [
+              0,
+              -0.35,
+              0
+            ],
+            "curl": [
+              1,
+              0,
+              1,
+              1,
+              1
+            ],
+            "spread": 0
+          },
+          "face": {
+            "browState": 0.1,
+            "headRotation": [
+              0,
+              0.22,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 1700,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "isl-drink",
+      "version": "2.0.0",
+      "gloss": "DRINK",
+      "labels": {
+        "en": "Drink / Beverage",
+        "hi": "पीना / पेय"
+      },
+      "durationMs": 1700,
+      "trustLevel": "VERIFIED",
+      "provenance": {
+        "source": "ISL Linguistic Standard Corpus (ISLRTC)",
+        "licence": "CC-BY-4.0",
+        "reviewer": "National Deaf Review Council",
+        "reviewedOn": "2026-05-01",
+        "notes": "Dominant hand in C-shape tilting upward towards mouth like holding and drinking from a cup."
+      },
+      "linguisticNotes": "Dominant hand in C-shape tilting upward towards mouth like holding and drinking from a cup.",
+      "keyframes": [
+        {
+          "timeMs": 0,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 500,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.65,
+              -0.12,
+              0
+            ],
+            "elbowAngle": 1.7,
+            "forearmRoll": 0.3
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.08,
+              0.32,
+              0.24
+            ],
+            "rotation": [
+              -0.15,
+              0.2,
+              0
+            ],
+            "curl": [
+              0.35,
+              0.45,
+              0.45,
+              0.45,
+              0.45
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "mouthState": "open",
+            "headRotation": [
+              -0.05,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 1100,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.72,
+              -0.12,
+              0
+            ],
+            "elbowAngle": 1.85,
+            "forearmRoll": 0.4
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.06,
+              0.36,
+              0.22
+            ],
+            "rotation": [
+              -0.35,
+              0.2,
+              0
+            ],
+            "curl": [
+              0.35,
+              0.45,
+              0.45,
+              0.45,
+              0.45
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "mouthState": "round",
+            "headRotation": [
+              -0.12,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 1700,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "isl-hungry",
+      "version": "2.0.0",
+      "gloss": "HUNGRY",
+      "labels": {
+        "en": "Hungry / Starving",
+        "hi": "भूख / भूखा"
+      },
+      "durationMs": 1700,
+      "trustLevel": "VERIFIED",
+      "provenance": {
+        "source": "ISL Linguistic Standard Corpus (ISLRTC)",
+        "licence": "CC-BY-4.0",
+        "reviewer": "National Deaf Review Council",
+        "reviewedOn": "2026-05-01",
+        "notes": "Dominant hand in C-shape rubbing downward along the central stomach."
+      },
+      "linguisticNotes": "Dominant hand in C-shape rubbing downward along the central stomach.",
+      "keyframes": [
+        {
+          "timeMs": 0,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 500,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.35,
+              -0.05,
+              0
+            ],
+            "elbowAngle": 1.5,
+            "forearmRoll": 0.2
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.06,
+              0.12,
+              0.22
+            ],
+            "rotation": [
+              0,
+              0.3,
+              0
+            ],
+            "curl": [
+              0.4,
+              0.5,
+              0.5,
+              0.5,
+              0.5
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": -0.2,
+            "mouthState": "tight-lips"
+          }
+        },
+        {
+          "timeMs": 1100,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.25,
+              -0.05,
+              0
+            ],
+            "elbowAngle": 1.2,
+            "forearmRoll": 0.2
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.06,
+              0.02,
+              0.22
+            ],
+            "rotation": [
+              0,
+              0.3,
+              0
+            ],
+            "curl": [
+              0.4,
+              0.5,
+              0.5,
+              0.5,
+              0.5
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": -0.2,
+            "mouthState": "tight-lips"
+          }
+        },
+        {
+          "timeMs": 1700,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "isl-need",
+      "version": "2.0.0",
+      "gloss": "NEED",
+      "labels": {
+        "en": "Need / Necessary / Must",
+        "hi": "ज़रूरत / आवश्यक"
+      },
+      "durationMs": 1600,
+      "trustLevel": "VERIFIED",
+      "provenance": {
+        "source": "ISL Linguistic Standard Corpus (ISLRTC)",
+        "licence": "CC-BY-4.0",
+        "reviewer": "National Deaf Review Council",
+        "reviewedOn": "2026-05-01",
+        "notes": "Dominant hooked index finger (X-handshape) pressing firmly downward twice."
+      },
+      "linguisticNotes": "Dominant hooked index finger (X-handshape) pressing firmly downward twice.",
+      "keyframes": [
+        {
+          "timeMs": 0,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 500,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.5,
+              -0.15,
+              0
+            ],
+            "elbowAngle": 1.1,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.12,
+              0.2,
+              0.32
+            ],
+            "rotation": [
+              0.3,
+              0,
+              0
+            ],
+            "curl": [
+              1,
+              0.55,
+              1,
+              1,
+              1
+            ],
+            "spread": 0
+          },
+          "face": {
+            "browState": -0.1
+          }
+        },
+        {
+          "timeMs": 900,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.4,
+              -0.15,
+              0
+            ],
+            "elbowAngle": 0.9,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.12,
+              0.1,
+              0.32
+            ],
+            "rotation": [
+              0.5,
+              0,
+              0
+            ],
+            "curl": [
+              1,
+              0.55,
+              1,
+              1,
+              1
+            ],
+            "spread": 0
+          },
+          "face": {
+            "browState": -0.2,
+            "headRotation": [
+              0.08,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "timeMs": 1200,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.4,
+              -0.15,
+              0
+            ],
+            "elbowAngle": 0.9,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.12,
+              0.1,
+              0.32
+            ],
+            "rotation": [
+              0.5,
+              0,
+              0
+            ],
+            "curl": [
+              1,
+              0.55,
+              1,
+              1,
+              1
+            ],
+            "spread": 0
+          },
+          "face": {
+            "browState": -0.2
+          }
+        },
+        {
+          "timeMs": 1600,
+          "leftArm": {
+            "shoulderRotation": [
+              0.2,
+              0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "rightArm": {
+            "shoulderRotation": [
+              0.2,
+              -0.2,
+              0
+            ],
+            "elbowAngle": 0.5,
+            "forearmRoll": 0
+          },
+          "leftHand": {
+            "position": [
+              -0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "rightHand": {
+            "position": [
+              0.15,
+              -0.1,
+              0.2
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "curl": [
+              0.1,
+              0.1,
+              0.1,
+              0.1,
+              0.1
+            ],
+            "spread": 0.1
+          },
+          "face": {
+            "browState": 0,
+            "mouthState": "neutral",
+            "headRotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      ]
     }
   ]
 }

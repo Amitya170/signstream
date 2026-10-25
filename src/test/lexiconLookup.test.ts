@@ -51,4 +51,38 @@ describe('Lexicon Exact-Match and Fingerspelling Rules', () => {
     expect(clip?.provenance.licence).toBe('CC-BY-4.0');
     expect(clip?.provenance.reviewer).toBeDefined();
   });
+
+  it('translates authentic distinct ISL pronouns and core actions without collision', async () => {
+    const resHe = await lexiconTranslator.translate('he');
+    expect(resHe.matchedSignClips[0].gloss).toBe('HE');
+
+    const resShe = await lexiconTranslator.translate('she');
+    expect(resShe.matchedSignClips[0].gloss).toBe('SHE');
+
+    const resWe = await lexiconTranslator.translate('we');
+    expect(resWe.matchedSignClips[0].gloss).toBe('WE');
+
+    const resThey = await lexiconTranslator.translate('they');
+    expect(resThey.matchedSignClips[0].gloss).toBe('THEY');
+
+    const resDrink = await lexiconTranslator.translate('drink');
+    expect(resDrink.matchedSignClips[0].gloss).toBe('DRINK');
+
+    const resHungry = await lexiconTranslator.translate('hungry');
+    expect(resHungry.matchedSignClips[0].gloss).toBe('HUNGRY');
+
+    const resNeed = await lexiconTranslator.translate('need');
+    expect(resNeed.matchedSignClips[0].gloss).toBe('NEED');
+  });
+
+  it('resolves open ISL vocabulary terms accurately from knowledge base', async () => {
+    const resBook = await lexiconTranslator.translate('book');
+    expect(resBook.matchedSignClips[0].gloss).toBe('BOOK');
+
+    const resHouse = await lexiconTranslator.translate('house');
+    expect(resHouse.matchedSignClips[0].gloss).toBe('HOUSE');
+
+    const resComputer = await lexiconTranslator.translate('computer');
+    expect(resComputer.matchedSignClips[0].gloss).toBe('COMPUTER');
+  });
 });

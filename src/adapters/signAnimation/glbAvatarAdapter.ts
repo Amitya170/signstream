@@ -462,19 +462,10 @@ export class GlbAvatarRig {
   }
 
   public getActiveSolverName(): string {
-    if (this.lastPose) {
-      const rawL = this.lastPose.leftHand.position || [-0.15, -0.1, 0.2];
-      const rawR = this.lastPose.rightHand.position || [0.15, -0.1, 0.2];
-      const isCenter = Math.abs(rawL[0]) <= 0.12 && Math.abs(rawR[0]) <= 0.12;
-      const dist = Math.hypot(rawR[0] - rawL[0], rawR[1] - rawL[1], rawR[2] - rawL[2]);
-      if (isCenter || dist < 0.24) {
-        const leftExt = (this.lastPose.leftHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
-        const rightExt = (this.lastPose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
-        const rightFist = (this.lastPose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) > 0.6;
-        if (leftExt && rightExt) return 'Anjali Mudra (Namaste)';
-        if (leftExt && rightFist) return 'Support Help (Fist on Palm)';
-      }
-    }
+    const gloss = this.lastPose?.activeGloss;
+    if (gloss === 'NAMASTE') return 'Anjali Mudra (Namaste)';
+    if (gloss === 'HELP') return 'Support Help (Fist on Palm)';
+    if (gloss) return `Authentic ISL: ${gloss}`;
     return 'Articulated Signing';
   }
 
@@ -503,23 +494,12 @@ export class GlbAvatarRig {
       this.bones.spine2.rotation.x = breath * 0.3;
     }
 
-    // 2. Two-Handed Interaction & Continuous Bilateral Synchronization Solver
+    // 2. Specific Dedicated ISL Solvers for Complex Multi-Hand Poses
+    const isNamasteSign = pose.activeGloss === 'NAMASTE';
+    const isHelpSign = pose.activeGloss === 'HELP';
+
     const rawL = pose.leftHand.position || [-0.15, -0.1, 0.2];
     const rawR = pose.rightHand.position || [0.15, -0.1, 0.2];
-
-    const distTarget = Math.hypot(rawR[0] - rawL[0], rawR[1] - rawL[1], rawR[2] - rawL[2]);
-    const leftExt = (pose.leftHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
-    const rightExt = (pose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
-    const rightFist = (pose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) > 0.6;
-
-    // Continuous hermite blend factor: 0 when hands are far apart (>0.26m), 1 when touching (<=0.10m)
-    const rawSyncFactor = Math.max(0, Math.min(1, (0.26 - distTarget) / 0.16));
-    const syncFactor = rawSyncFactor * rawSyncFactor * (3 - 2 * rawSyncFactor);
-
-    const isNamasteCandidate = leftExt && rightExt && (Math.abs(rawL[0]) <= 0.16 && Math.abs(rawR[0]) <= 0.16);
-    const isSupportCandidate = leftExt && rightFist && (Math.abs(rawL[0]) <= 0.16 && Math.abs(rawR[0]) <= 0.16);
-    const isPrayingNamaste = isNamasteCandidate && syncFactor > 0.65;
-    const isSupportHelp = isSupportCandidate && syncFactor > 0.65;
 
     // 3. Biomechanical Clavicle & Shoulder Elevation
     const pitchL = Math.max(0, pose.leftArm.shoulderRotation[0]);
@@ -533,7 +513,7 @@ export class GlbAvatarRig {
 
     // 4. Head Gaze & Respectful Nod / Dynamic Hand Altitude Tracking
     if (this.bones.head) {
-      if (isPrayingNamaste) {
+      if (isNamasteSign) {
         // Authentic respectful forward nod
         this.bones.head.rotation.set(0.12, 0, 0);
       } else {
@@ -547,8 +527,7 @@ export class GlbAvatarRig {
     }
 
     // 5. Anatomical Arm & Hand Solving with Biomechanical Kinematic Accuracy
-    const isMudraActive = isPrayingNamaste || (isNamasteCandidate && syncFactor > 0.15);
-    if (isMudraActive) {
+    if (isNamasteSign) {
       // Symmetrical Pad-to-Pad Flush Contact Physics:
       // Forearms pitch forward identically (+0.45) so hands meet in the same exact Z-depth plane
       // Wrists have zero lateral deviation (Z = 0.0) preventing scissor crossing or finger penetration
@@ -574,7 +553,7 @@ export class GlbAvatarRig {
         this.bones.rightForeArm.rotation.set(forePitch, -foreYaw, -foreElbow);
         this.bones.rightHand.rotation.set(wristPitch, -wristYaw, -wristRoll);
       }
-    } else if (isSupportHelp) {
+    } else if (isHelpSign) {
       // Authentic Help Sign: Right fist resting on flat upward-facing left palm
       if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
         this.bones.leftArm.rotation.set(0.38, 0.15, 1.22);
@@ -587,9 +566,9 @@ export class GlbAvatarRig {
         this.bones.rightHand.rotation.set(0.15, -0.2, -0.2);
       }
     } else {
-      // Precise Kinematic Spatial Solving: Maps target Hand Position & Rotation into authentic ISL signing space
-      const isRightActive = rawR[1] > -0.05 || rawR[2] > 0.25 || Math.abs(rawR[0] - 0.15) > 0.04;
-      const isLeftActive = rawL[1] > -0.05 || rawL[2] > 0.25 || Math.abs(rawL[0] + 0.15) > 0.04;
+      // True 3D Kinematic Spatial Solving: Translates target Hand Coordinates (X, Y, Z) into Authentic ISL Articulation
+      const isRightActive = rawR[1] > -0.05 || rawR[2] > 0.24 || Math.abs(rawR[0] - 0.15) > 0.03;
+      const isLeftActive = rawL[1] > -0.05 || rawL[2] > 0.24 || Math.abs(rawL[0] + 0.15) > 0.03;
 
       // Right Arm Solving (Dominant Signing Hand in standard ISL corpus)
       if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
@@ -598,38 +577,57 @@ export class GlbAvatarRig {
           this.bones.rightArm.rotation.set(0.08, -0.04, -1.42);
           this.bones.rightForeArm.rotation.set(0.0, -0.1, -0.2);
           this.bones.rightHand.rotation.set(0.05, -0.05, 0.0);
-        } else if (rawR[1] > 0.22) {
-          // Chin / Mouth / Face Area (e.g. Thank You, Water, Food, Doctor):
-          // Hand touches cleanly at lower chin without covering eyes or glasses
-          const chinProgress = Math.min(1, Math.max(0, (rawR[1] - 0.22) / 0.18));
-          const fwdReach = Math.min(1, Math.max(0, (rawR[2] - 0.22) / 0.25));
-
-          const rPitch = 0.38 + chinProgress * 0.18 - fwdReach * 0.15;
-          const rAdduct = -1.15 + (1 - chinProgress) * -0.12;
-          const rForeElbow = 1.45 + chinProgress * 0.42 - fwdReach * 0.95;
-          const rForeYaw = -0.35 + chinProgress * -0.15;
-          const rForePitch = 0.25 + chinProgress * 0.15;
-
-          this.bones.rightArm.rotation.set(rPitch, -0.12, rAdduct);
-          this.bones.rightForeArm.rotation.set(rForePitch, rForeYaw, -rForeElbow);
-
-          // Wrist angle: Palm faces chin slightly tilted back, not covering face
-          const wPitch = -0.35 + fwdReach * 0.55;
-          const wYaw = 0.18 - fwdReach * 0.25;
-          this.bones.rightHand.rotation.set(wPitch, wYaw, -0.05);
         } else {
-          // Mid-Chest / Conversational Signing Space (e.g. Please, Meet, How are you)
-          const pitch = Math.max(0.15, pitchR * 0.85);
-          const elbow = Math.max(0.3, pose.rightArm.elbowAngle * 0.9);
-          const adduction = -1.25 + Math.min(0.4, (0.25 - rawR[0]) * 0.8);
+          const targetX = rawR[0];
+          const targetY = rawR[1];
+          const targetZ = rawR[2];
 
-          this.bones.rightArm.rotation.set(pitch, -0.15, adduction);
-          this.bones.rightForeArm.rotation.set(0.15, -0.25, -elbow);
-          this.bones.rightHand.rotation.set(pose.rightHand.rotation[0], pose.rightHand.rotation[1], pose.rightHand.rotation[2]);
+          // 1. Shoulder Pitch: Combines keyframe shoulder pitch with vertical target elevation
+          const basePitchR = pose.rightArm?.shoulderRotation?.[0]
+            ? pose.rightArm.shoulderRotation[0] * 0.95
+            : 0.24 + (targetY + 0.05) * 0.95;
+          const rPitch = targetY > 0.30
+            ? Math.max(basePitchR, 0.38 + (targetY - 0.30) * 1.1)
+            : basePitchR;
+          const clampedPitchR = Math.max(0.15, Math.min(1.42, rPitch));
+
+          // 2. Shoulder Adduction: Precise lateral tracking without cross-body skew
+          const adductionR = -1.28 + Math.min(0.48, Math.max(-0.45, (0.18 - targetX) * 0.88));
+
+          // 3. Elbow Flexion: Uses calibrated keyframe elbow with distance compensation
+          const baseElbowR = pose.rightArm?.elbowAngle
+            ? pose.rightArm.elbowAngle * 0.95
+            : Math.max(0.4, 1.45 - (targetZ - 0.2) * 1.6);
+          const rElbow = targetY > 0.30 && targetZ < 0.26
+            ? Math.max(baseElbowR, 1.55 + (targetY - 0.30) * 0.6)
+            : baseElbowR;
+
+          // 4. Forearm Orientation: Roll and Yaw
+          const foreRollR = pose.rightArm?.forearmRoll || -0.25;
+          const rForePitch = 0.12 + (targetY > 0.25 ? (targetY - 0.25) * 0.35 : 0);
+
+          this.bones.rightArm.rotation.set(clampedPitchR, -0.10, adductionR);
+          this.bones.rightForeArm.rotation.set(rForePitch, foreRollR, -rElbow);
+
+          // 5. Wrist & Hand Rotation: Combine keyframe rotation with spatial contact orientation
+          if (targetY > 0.30 && targetZ < 0.28) {
+            // Tilting palm towards face/chin for mouth, chin, or temple contact
+            this.bones.rightHand.rotation.set(
+              -0.25 + (targetZ - 0.20) * 0.5,
+              0.15 + pose.rightHand.rotation[1] * 0.5,
+              -0.05 + pose.rightHand.rotation[2] * 0.5
+            );
+          } else {
+            this.bones.rightHand.rotation.set(
+              pose.rightHand.rotation[0],
+              pose.rightHand.rotation[1],
+              pose.rightHand.rotation[2]
+            );
+          }
         }
       }
 
-      // Left Arm Solving (Secondary / Passive Hand)
+      // Left Arm Solving (Secondary / Symmetrical Signing Hand)
       if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
         if (!isLeftActive) {
           // Natural relaxed resting posture at hip/thigh
@@ -637,13 +635,43 @@ export class GlbAvatarRig {
           this.bones.leftForeArm.rotation.set(0.0, 0.1, 0.2);
           this.bones.leftHand.rotation.set(0.05, 0.05, 0.0);
         } else {
-          const pitch = Math.max(0.15, pitchL * 0.85);
-          const elbow = Math.max(0.3, pose.leftArm.elbowAngle * 0.9);
-          const adduction = 1.25 - Math.min(0.4, (rawL[0] + 0.25) * 0.8);
+          const targetX = rawL[0];
+          const targetY = rawL[1];
+          const targetZ = rawL[2];
 
-          this.bones.leftArm.rotation.set(pitch, 0.15, adduction);
-          this.bones.leftForeArm.rotation.set(0.15, 0.25, elbow);
-          this.bones.leftHand.rotation.set(pose.leftHand.rotation[0], pose.leftHand.rotation[1], pose.leftHand.rotation[2]);
+          // 1. Shoulder Pitch
+          const basePitchL = pose.leftArm?.shoulderRotation?.[0]
+            ? pose.leftArm.shoulderRotation[0] * 0.95
+            : 0.24 + (targetY + 0.05) * 0.95;
+          const lPitch = targetY > 0.30
+            ? Math.max(basePitchL, 0.38 + (targetY - 0.30) * 1.1)
+            : basePitchL;
+          const clampedPitchL = Math.max(0.15, Math.min(1.42, lPitch));
+
+          // 2. Shoulder Adduction
+          const adductionL = 1.28 - Math.min(0.48, Math.max(-0.45, (targetX + 0.18) * 0.88));
+
+          // 3. Elbow Flexion
+          const baseElbowL = pose.leftArm?.elbowAngle
+            ? pose.leftArm.elbowAngle * 0.95
+            : Math.max(0.4, 1.45 - (targetZ - 0.2) * 1.6);
+          const lElbow = targetY > 0.30 && targetZ < 0.26
+            ? Math.max(baseElbowL, 1.55 + (targetY - 0.30) * 0.6)
+            : baseElbowL;
+
+          // 4. Forearm Orientation
+          const foreRollL = pose.leftArm?.forearmRoll || 0.25;
+          const lForePitch = 0.12 + (targetY > 0.25 ? (targetY - 0.25) * 0.35 : 0);
+
+          this.bones.leftArm.rotation.set(clampedPitchL, 0.10, adductionL);
+          this.bones.leftForeArm.rotation.set(lForePitch, foreRollL, lElbow);
+
+          // 5. Wrist
+          this.bones.leftHand.rotation.set(
+            pose.leftHand.rotation[0],
+            pose.leftHand.rotation[1],
+            pose.leftHand.rotation[2]
+          );
         }
       }
     }
@@ -654,15 +682,15 @@ export class GlbAvatarRig {
     const spreadL = (pose.leftHand.spread ?? 0.05);
 
     for (let f = 0; f < 5; f++) {
-      const curlL = isMudraActive ? 0 : (isSupportHelp ? 0 : (pose.leftHand.curl[f] ?? 0));
+      const curlL = isNamasteSign ? 0 : (isHelpSign ? 0 : (pose.leftHand.curl[f] ?? 0));
       const leftChain = this.bones.leftFingers[f];
       if (leftChain) {
         for (let p = 0; p < leftChain.length; p++) {
           const b = leftChain[p];
           const w = jointWeights[p] ?? 0.25;
           if (f === 0) {
-            b.rotation.x = isMudraActive ? -0.15 : (curlL * 0.35 * w * 2.5);
-            b.rotation.z = isMudraActive ? 0.05 : (curlL * 0.25 * w * 2.5);
+            b.rotation.x = isNamasteSign ? -0.15 : (curlL * 0.35 * w * 2.5);
+            b.rotation.z = isNamasteSign ? 0.05 : (curlL * 0.25 * w * 2.5);
           } else {
             b.rotation.z = curlL * 1.4 * w;
             b.rotation.y = (f - 2) * spreadL * 0.2 * (p === 0 ? 1 : 0.3);
@@ -670,15 +698,15 @@ export class GlbAvatarRig {
         }
       }
 
-      const curlR = isMudraActive ? 0 : (isSupportHelp ? (f === 0 ? 0.7 : 0.9) : (pose.rightHand.curl[f] ?? 0));
+      const curlR = isNamasteSign ? 0 : (isHelpSign ? (f === 0 ? 0.7 : 0.9) : (pose.rightHand.curl[f] ?? 0));
       const rightChain = this.bones.rightFingers[f];
       if (rightChain) {
         for (let p = 0; p < rightChain.length; p++) {
           const b = rightChain[p];
           const w = jointWeights[p] ?? 0.25;
           if (f === 0) {
-            b.rotation.x = isMudraActive ? -0.15 : (curlR * 0.35 * w * 2.5);
-            b.rotation.z = isMudraActive ? -0.05 : (-curlR * 0.25 * w * 2.5);
+            b.rotation.x = isNamasteSign ? -0.15 : (curlR * 0.35 * w * 2.5);
+            b.rotation.z = isNamasteSign ? -0.05 : (-curlR * 0.25 * w * 2.5);
           } else {
             b.rotation.z = -curlR * 1.4 * w;
             b.rotation.y = (f - 2) * -spreadR * 0.2 * (p === 0 ? 1 : 0.3);

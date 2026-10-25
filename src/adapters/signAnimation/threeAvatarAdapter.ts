@@ -806,38 +806,29 @@ export class ThreeAvatarRig {
     );
 
     // Detect two-handed interaction / contact
-    const isCenterTwoHanded = Math.abs(rawL[0]) <= 0.08 && Math.abs(rawR[0]) <= 0.08;
     const handDistance = targetLeft.distanceTo(targetRight);
 
-    let isPrayingNamaste = false;
-    let isSupportHelp = false;
+    const isPrayingNamaste = pose.activeGloss === 'NAMASTE';
+    const isSupportHelp = pose.activeGloss === 'HELP';
 
-    if (isCenterTwoHanded || handDistance < 0.16) {
-      const leftExt = (pose.leftHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
-      const rightExt = (pose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
-      const rightFist = (pose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) > 0.6;
-
-      if (leftExt && rightExt) {
-        // Namaste / Prayer Gesture: Hands meet flush at center
-        isPrayingNamaste = true;
-        const midY = (targetLeft.y + targetRight.y) / 2;
-        const midZ = (targetLeft.z + targetRight.z) / 2;
-        targetLeft.set(-0.018, midY, midZ);
-        targetRight.set(0.018, midY, midZ);
-      } else if (leftExt && rightFist) {
-        // Support / Help: Right fist sits on left palm
-        isSupportHelp = true;
-        const midX = (targetLeft.x + targetRight.x) / 2;
-        const midZ = Math.max(targetLeft.z, targetRight.z);
-        targetLeft.set(midX, targetLeft.y, midZ);
-        targetRight.set(midX, targetLeft.y + 0.045, midZ);
-      } else {
-        // General close interaction (WORK, MEET, FRIEND)
-        if (handDistance < 0.035) {
-          const mid = new THREE.Vector3().addVectors(targetLeft, targetRight).multiplyScalar(0.5);
-          targetLeft.x = Math.min(targetLeft.x, mid.x - 0.018);
-          targetRight.x = Math.max(targetRight.x, mid.x + 0.018);
-        }
+    if (isPrayingNamaste) {
+      // Namaste / Prayer Gesture: Hands meet flush at center
+      const midY = (targetLeft.y + targetRight.y) / 2;
+      const midZ = (targetLeft.z + targetRight.z) / 2;
+      targetLeft.set(-0.018, midY, midZ);
+      targetRight.set(0.018, midY, midZ);
+    } else if (isSupportHelp) {
+      // Support / Help: Right fist sits on left palm
+      const midX = (targetLeft.x + targetRight.x) / 2;
+      const midZ = Math.max(targetLeft.z, targetRight.z);
+      targetLeft.set(midX, targetLeft.y, midZ);
+      targetRight.set(midX, targetLeft.y + 0.045, midZ);
+    } else {
+      // General close interaction (WORK, MEET, FRIEND)
+      if (handDistance < 0.035) {
+        const mid = new THREE.Vector3().addVectors(targetLeft, targetRight).multiplyScalar(0.5);
+        targetLeft.x = Math.min(targetLeft.x, mid.x - 0.018);
+        targetRight.x = Math.max(targetRight.x, mid.x + 0.018);
       }
     }
 

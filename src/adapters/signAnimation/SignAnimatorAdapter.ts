@@ -1,6 +1,7 @@
 import { SignClip } from '../../core/types';
 
 export interface InterpolatedPose {
+  activeGloss?: string;
   leftArm: {
     shoulderRotation: [number, number, number];
     elbowAngle: number;
@@ -75,6 +76,7 @@ export function interpolateKeyframes(clip: SignClip, timeMs: number): Interpolat
   const factor = smootherstep(rawRatio);
 
   return {
+    activeGloss: clip.gloss,
     leftArm: {
       shoulderRotation: [
         lerpAngle(prev.leftArm?.shoulderRotation?.[0] ?? 0.2, next.leftArm?.shoulderRotation?.[0] ?? 0.2, factor),
