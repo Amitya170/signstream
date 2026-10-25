@@ -76,6 +76,7 @@ export class GlbAvatarRig {
   private hologramPedestalGroup: THREE.Group;
   private hologramRing1: THREE.Mesh;
   private hologramRing2: THREE.Mesh;
+  private scanlineMesh: THREE.Mesh | null = null;
 
   // Camera Orbit & View Presets
   private activePreset: CameraPreset = 'CHEST_SIGNING';
@@ -184,6 +185,18 @@ export class GlbAvatarRig {
     ring2Geo.rotateX(-Math.PI / 2);
     this.hologramRing2 = new THREE.Mesh(ring2Geo, holoRingMat);
     this.hologramPedestalGroup.add(this.hologramRing2);
+
+    // Cyber Hologram Vertical Scanning Beam Disc
+    const scanGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.015, 32);
+    const scanMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.35,
+      side: THREE.DoubleSide
+    });
+    this.scanlineMesh = new THREE.Mesh(scanGeo, scanMat);
+    this.scanlineMesh.visible = this.visualStyle === 'CYBER_HOLOGRAM';
+    this.scene.add(this.scanlineMesh);
 
     this.createLoadingSpinner();
     this.setupOrbitInteraction();
@@ -342,6 +355,9 @@ export class GlbAvatarRig {
 
     this.hologramPedestalGroup.visible = isHolo;
     this.hologramUpLight.visible = isHolo;
+    if (this.scanlineMesh) {
+      this.scanlineMesh.visible = isHolo;
+    }
   }
 
   public setVisualStyle(style: VisualStyle): void {
@@ -445,6 +461,23 @@ export class GlbAvatarRig {
     el.addEventListener('wheel', onWheel, { passive: false });
   }
 
+  public getActiveSolverName(): string {
+    if (this.lastPose) {
+      const rawL = this.lastPose.leftHand.position || [-0.15, -0.1, 0.2];
+      const rawR = this.lastPose.rightHand.position || [0.15, -0.1, 0.2];
+      const isCenter = Math.abs(rawL[0]) <= 0.08 && Math.abs(rawR[0]) <= 0.08;
+      const dist = Math.hypot(rawR[0] - rawL[0], rawR[1] - rawL[1], rawR[2] - rawL[2]);
+      if (isCenter || dist < 0.16) {
+        const leftExt = (this.lastPose.leftHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
+        const rightExt = (this.lastPose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
+        const rightFist = (this.lastPose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) > 0.6;
+        if (leftExt && rightExt) return 'Anjali Mudra (Namaste)';
+        if (leftExt && rightFist) return 'Support Help (Fist on Palm)';
+      }
+    }
+    return 'Articulated Signing';
+  }
+
   /**
    * Anatomical 3D Sign Engine & Contact Solver:
    * Authentic Namaste (Anjali Mudra), Help, and Natural Human Sign Kinematics
@@ -492,21 +525,32 @@ export class GlbAvatarRig {
       }
     }
 
-    // 3. Head Gaze & Respectful Nod
+    // 3. Biomechanical Clavicle & Shoulder Elevation
+    const pitchL = Math.max(0, pose.leftArm.shoulderRotation[0]);
+    const pitchR = Math.max(0, pose.rightArm.shoulderRotation[0]);
+    if (this.bones.leftShoulder) {
+      this.bones.leftShoulder.position.y = Math.max(0, pitchL - 0.2) * 0.02 + breath * 0.003;
+    }
+    if (this.bones.rightShoulder) {
+      this.bones.rightShoulder.position.y = Math.max(0, pitchR - 0.2) * 0.02 + breath * 0.003;
+    }
+
+    // 4. Head Gaze & Respectful Nod / Dynamic Hand Altitude Tracking
     if (this.bones.head) {
       if (isPrayingNamaste) {
         // Authentic respectful forward nod
         this.bones.head.rotation.set(0.12, 0, 0);
       } else {
+        const gazeY = ((rawL[1] + rawR[1]) * 0.5 - 0.1) * 0.2;
         this.bones.head.rotation.set(
-          pose.face.headRotation[0] * 0.7,
+          pose.face.headRotation[0] * 0.7 - gazeY,
           pose.face.headRotation[1] * 0.7,
           pose.face.headRotation[2] * 0.7
         );
       }
     }
 
-    // 4. Anatomical Arm & Hand Solving
+    // 5. Anatomical Arm & Hand Solving
     if (isPrayingNamaste) {
       // Authentic Anjali Mudra: Palms meet cleanly at mid-chest without crossing over, fingers pointing UP
       if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
@@ -534,30 +578,28 @@ export class GlbAvatarRig {
     } else {
       // Natural Signing Space: No chicken-wing flare, relaxed adduction near torso
       if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
-        const pitchL = Math.max(0, pose.leftArm.shoulderRotation[0]);
         const rollL = pose.leftArm.shoulderRotation[1];
         const yawL = pose.leftArm.shoulderRotation[2];
         const elbowL = Math.max(0.1, pose.leftArm.elbowAngle);
-
         const adductionL = 1.32 - pitchL * 0.25;
+
         this.bones.leftArm.rotation.set(pitchL * 0.9, rollL * 0.4 + yawL * 0.3, adductionL);
         this.bones.leftForeArm.rotation.set(pose.leftArm.forearmRoll * 0.4, 0.2, elbowL * 0.95 + 0.15);
         this.bones.leftHand.rotation.set(pose.leftHand.rotation[0], pose.leftHand.rotation[1], pose.leftHand.rotation[2]);
       }
       if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
-        const pitchR = Math.max(0, pose.rightArm.shoulderRotation[0]);
         const rollR = pose.rightArm.shoulderRotation[1];
         const yawR = pose.rightArm.shoulderRotation[2];
         const elbowR = Math.max(0.1, pose.rightArm.elbowAngle);
-
         const adductionR = -1.32 + pitchR * 0.25;
+
         this.bones.rightArm.rotation.set(pitchR * 0.9, rollR * 0.4 + yawR * 0.3, adductionR);
         this.bones.rightForeArm.rotation.set(pose.rightArm.forearmRoll * 0.4, -0.2, -elbowR * 0.95 - 0.15);
         this.bones.rightHand.rotation.set(pose.rightHand.rotation[0], pose.rightHand.rotation[1], pose.rightHand.rotation[2]);
       }
     }
 
-    // 5. Five-Finger Articulation Across Phalanges
+    // 6. Five-Finger Articulation Across Phalanges
     for (let f = 0; f < 5; f++) {
       const curlL = isPrayingNamaste ? 0 : (isSupportHelp ? 0 : (pose.leftHand.curl[f] ?? 0));
       const leftChain = this.bones.leftFingers[f];
@@ -588,13 +630,20 @@ export class GlbAvatarRig {
       }
     }
 
-    // 6. Hologram Floor Pedestal Rotation
+    // 7. Hologram Floor Pedestal Rings & Vertical Scanline Sweep
     if (this.visualStyle === 'CYBER_HOLOGRAM') {
       this.hologramRing1.rotation.z += 0.015;
       this.hologramRing2.rotation.z -= 0.01;
       const pulse = Math.sin(now * 3.5) * 0.12 + 0.88;
       (this.hologramRing1.material as THREE.MeshBasicMaterial).opacity = 0.75 * pulse;
       (this.hologramRing2.material as THREE.MeshBasicMaterial).opacity = 0.5 * pulse;
+
+      if (this.scanlineMesh) {
+        const scanY = (now * 0.7) % 1.7;
+        this.scanlineMesh.position.y = scanY;
+        const alpha = Math.sin((scanY / 1.7) * Math.PI) * 0.45;
+        (this.scanlineMesh.material as THREE.MeshBasicMaterial).opacity = alpha;
+      }
     }
 
     this.render();

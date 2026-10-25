@@ -66,6 +66,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
   const [glbModelId, setGlbModelId] = useState<GlbModelId>('michelle');
   const [visualStyle, setVisualStyle] = useState<VisualStyle>(initialVisualStyle);
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('CHEST_SIGNING');
+  const [activeSolverText, setActiveSolverText] = useState<string>('Articulated Signing');
 
   const animFrameRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number | null>(null);
@@ -168,6 +169,8 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
       const pose = interpolateKeyframes(clip, nextTime);
       if (renderMode === 'glb' && glbRigRef.current) {
         glbRigRef.current.updatePose(pose);
+        const solver = glbRigRef.current.getActiveSolverName();
+        setActiveSolverText(solver);
       } else if (renderMode === 'three' && threeRigRef.current) {
         threeRigRef.current.updatePose(pose);
       } else if (renderMode === 'svg') {
@@ -180,6 +183,8 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
       const def = getDefaultPose();
       if (renderMode === 'glb' && glbRigRef.current) {
         glbRigRef.current.updatePose(def);
+        const solver = glbRigRef.current.getActiveSolverName();
+        setActiveSolverText(solver);
       } else if (renderMode === 'three' && threeRigRef.current) {
         threeRigRef.current.updatePose(def);
       }
@@ -420,6 +425,12 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
 
             <div className="absolute top-12 right-3 pointer-events-none text-[11px] font-semibold text-slate-400 bg-slate-900/80 backdrop-blur-md px-2 py-0.5 rounded border border-slate-700/60 shadow">
               360° Drag & Zoom
+            </div>
+
+            {/* Live Kinematic Solver HUD Badge */}
+            <div className="absolute bottom-3 right-3 pointer-events-none flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-full border border-slate-800 text-[10px] text-cyan-400 font-mono shadow-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              <span>{activeSolverText}</span>
             </div>
           </>
         )}
