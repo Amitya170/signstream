@@ -1,0 +1,661 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { InterpolatedPose } from './SignAnimatorAdapter';
+import { AvatarOptions, CameraPreset, VisualStyle } from './threeAvatarAdapter';
+
+interface BoneCache {
+  head: THREE.Bone | null;
+  neck: THREE.Bone | null;
+  spine2: THREE.Bone | null;
+  leftShoulder: THREE.Bone | null;
+  leftArm: THREE.Bone | null;
+  leftForeArm: THREE.Bone | null;
+  leftHand: THREE.Bone | null;
+  rightShoulder: THREE.Bone | null;
+  rightArm: THREE.Bone | null;
+  rightForeArm: THREE.Bone | null;
+  rightHand: THREE.Bone | null;
+  leftFingers: THREE.Bone[][];
+  rightFingers: THREE.Bone[][];
+}
+
+interface BoneRestTransform {
+  bone: THREE.Bone;
+  pos: THREE.Vector3;
+  rot: THREE.Euler;
+  quat: THREE.Quaternion;
+}
+
+export class GlbAvatarRig {
+  private container: HTMLElement;
+  private scene: THREE.Scene;
+  private camera: THREE.PerspectiveCamera;
+  private renderer: THREE.WebGLRenderer;
+  private disposed = false;
+  private visualStyle: VisualStyle = 'STUDIO_HUMAN';
+
+  // State
+  private model: THREE.Group | null = null;
+  private bones: BoneCache = {
+    head: null,
+    neck: null,
+    spine2: null,
+    leftShoulder: null,
+    leftArm: null,
+    leftForeArm: null,
+    leftHand: null,
+    rightShoulder: null,
+    rightArm: null,
+    rightForeArm: null,
+    rightHand: null,
+    leftFingers: [[], [], [], [], []],
+    rightFingers: [[], [], [], [], []]
+  };
+  private restTransforms = new Map<string, BoneRestTransform>();
+  private originalMaterials = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
+  private holoMaterial: THREE.MeshStandardMaterial;
+
+  private loading = true;
+  private loadError = false;
+  private loadingSpinner: THREE.Group | null = null;
+
+  // Studio Lighting System
+  private ambientLight: THREE.AmbientLight;
+  private keyLight: THREE.DirectionalLight;
+  private cyanRimLight: THREE.DirectionalLight;
+  private warmFillLight: THREE.DirectionalLight;
+  private hologramUpLight: THREE.PointLight;
+
+  // Hologram Pedestal FX
+  private stageMesh: THREE.Mesh;
+  private hologramPedestalGroup: THREE.Group;
+  private hologramRing1: THREE.Mesh;
+  private hologramRing2: THREE.Mesh;
+
+  // Camera Orbit & View Presets
+  private activePreset: CameraPreset = 'CHEST_SIGNING';
+  private isDragging = false;
+  private previousPointerPosition = { x: 0, y: 0 };
+  private orbitY = 0;
+  private orbitX = 0;
+  private zoomDistance = 1.65;
+  private modelCenterY = 1.35;
+
+  constructor(
+    container: HTMLElement,
+    options: AvatarOptions,
+    modelUrl = '/models/readyplayer.me.glb'
+  ) {
+    this.container = container;
+    this.visualStyle = options.visualStyle || 'STUDIO_HUMAN';
+    const width = container.clientWidth || 360;
+    const height = container.clientHeight || 420;
+
+    // 1. Scene & Camera Setup
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(options.backgroundColor);
+
+    this.camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 100);
+
+    // 2. High-Precision PBR Renderer with Soft Shadows
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
+    this.renderer.setSize(width, height);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.15;
+    container.appendChild(this.renderer.domElement);
+
+    this.applyCameraPreset('CHEST_SIGNING');
+
+    // 3. Cinematic Studio Three-Point Lighting System
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 1.1);
+    this.scene.add(this.ambientLight);
+
+    this.keyLight = new THREE.DirectionalLight(0xffffff, 1.3);
+    this.keyLight.position.set(1.4, 3.2, 2.2);
+    this.keyLight.castShadow = true;
+    this.keyLight.shadow.mapSize.width = 1024;
+    this.keyLight.shadow.mapSize.height = 1024;
+    this.keyLight.shadow.bias = -0.001;
+    this.scene.add(this.keyLight);
+
+    this.cyanRimLight = new THREE.DirectionalLight(0x38bdf8, 0.85);
+    this.cyanRimLight.position.set(-1.8, 2.2, -1.2);
+    this.scene.add(this.cyanRimLight);
+
+    this.warmFillLight = new THREE.DirectionalLight(0xfef08a, 0.55);
+    this.warmFillLight.position.set(1.5, 1.2, -1.0);
+    this.scene.add(this.warmFillLight);
+
+    this.hologramUpLight = new THREE.PointLight(0x06b6d4, 2.2, 3.0);
+    this.hologramUpLight.position.set(0, 0.1, 0);
+    this.hologramUpLight.visible = this.visualStyle === 'CYBER_HOLOGRAM';
+    this.scene.add(this.hologramUpLight);
+
+    // Hologram Material
+    this.holoMaterial = new THREE.MeshStandardMaterial({
+      color: 0x06b6d4,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.6,
+      roughness: 0.2,
+      metalness: 0.75,
+      transparent: true,
+      opacity: 0.86
+    });
+
+    // 4. Stage Pedestal
+    const stageGeo = new THREE.CylinderGeometry(0.85, 0.9, 0.04, 32);
+    const stageMat = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      roughness: 0.8,
+      metalness: 0.2
+    });
+    this.stageMesh = new THREE.Mesh(stageGeo, stageMat);
+    this.stageMesh.position.set(0, -0.02, 0);
+    this.stageMesh.receiveShadow = true;
+    this.scene.add(this.stageMesh);
+
+    // Hologram Concentric Light Rings
+    this.hologramPedestalGroup = new THREE.Group();
+    this.hologramPedestalGroup.position.set(0, 0.01, 0);
+    this.hologramPedestalGroup.visible = this.visualStyle === 'CYBER_HOLOGRAM';
+    this.scene.add(this.hologramPedestalGroup);
+
+    const holoRingMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.75,
+      side: THREE.DoubleSide
+    });
+    const ring1Geo = new THREE.RingGeometry(0.46, 0.51, 32);
+    ring1Geo.rotateX(-Math.PI / 2);
+    this.hologramRing1 = new THREE.Mesh(ring1Geo, holoRingMat);
+    this.hologramPedestalGroup.add(this.hologramRing1);
+
+    const ring2Geo = new THREE.RingGeometry(0.68, 0.72, 32);
+    ring2Geo.rotateX(-Math.PI / 2);
+    this.hologramRing2 = new THREE.Mesh(ring2Geo, holoRingMat);
+    this.hologramPedestalGroup.add(this.hologramRing2);
+
+    // 5. Elegant Loading Spinner in 3D Space
+    this.createLoadingSpinner();
+
+    // 6. Setup Interaction & Load Model
+    this.setupOrbitInteraction();
+    this.loadGlbModel(modelUrl);
+  }
+
+  private createLoadingSpinner(): void {
+    this.loadingSpinner = new THREE.Group();
+    this.loadingSpinner.position.set(0, 1.35, 0);
+
+    const ringGeo = new THREE.TorusGeometry(0.18, 0.014, 16, 48);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+    this.loadingSpinner.add(ringMesh);
+
+    const coreGeo = new THREE.SphereGeometry(0.04, 16, 16);
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+    this.loadingSpinner.add(coreMesh);
+
+    this.scene.add(this.loadingSpinner);
+  }
+
+  private loadGlbModel(url: string): void {
+    const loader = new GLTFLoader();
+    loader.load(
+      url,
+      (gltf) => {
+        if (this.disposed) return;
+        this.model = gltf.scene;
+
+        // Position and scale human avatar nicely
+        this.model.position.set(0, 0, 0);
+        this.model.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            this.originalMaterials.set(child, child.material);
+          }
+        });
+
+        this.scene.add(this.model);
+
+        // Remove loading spinner
+        if (this.loadingSpinner) {
+          this.scene.remove(this.loadingSpinner);
+          this.loadingSpinner = null;
+        }
+
+        // Discover and cache skeleton bones
+        this.discoverBones(this.model);
+
+        // Apply current visual style
+        this.applyVisualStyleToModel();
+
+        this.loading = false;
+        this.render();
+      },
+      undefined,
+      (error) => {
+        console.warn('GLB Avatar load error, falling back to backup models:', error);
+        // Attempt fallback to Michelle or Xbot if primary fails
+        if (url !== '/models/Michelle.glb') {
+          this.loadGlbModel('/models/Michelle.glb');
+        } else {
+          this.loadError = true;
+          this.loading = false;
+        }
+      }
+    );
+  }
+
+  private findBone(root: THREE.Object3D, targetName: string): THREE.Bone | null {
+    let result: THREE.Bone | null = null;
+    root.traverse((child) => {
+      if (child instanceof THREE.Bone) {
+        const clean = child.name.replace(/^mixamorig/, '');
+        if (
+          clean.toLowerCase() === targetName.toLowerCase() ||
+          child.name.toLowerCase() === targetName.toLowerCase()
+        ) {
+          result = child;
+        }
+      }
+    });
+    return result;
+  }
+
+  private discoverBones(root: THREE.Object3D): void {
+    root.updateMatrixWorld(true);
+
+    this.bones.head = this.findBone(root, 'Head');
+    this.bones.neck = this.findBone(root, 'Neck');
+    this.bones.spine2 = this.findBone(root, 'Spine2');
+    this.bones.leftShoulder = this.findBone(root, 'LeftShoulder');
+    this.bones.leftArm = this.findBone(root, 'LeftArm');
+    this.bones.leftForeArm = this.findBone(root, 'LeftForeArm');
+    this.bones.leftHand = this.findBone(root, 'LeftHand');
+    this.bones.rightShoulder = this.findBone(root, 'RightShoulder');
+    this.bones.rightArm = this.findBone(root, 'RightArm');
+    this.bones.rightForeArm = this.findBone(root, 'RightForeArm');
+    this.bones.rightHand = this.findBone(root, 'RightHand');
+
+    // Discover 5 fingers for left hand (Thumb, Index, Middle, Ring, Pinky)
+    const fingerNames = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'];
+    for (let f = 0; f < 5; f++) {
+      const fName = fingerNames[f];
+      this.bones.leftFingers[f] = [];
+      this.bones.rightFingers[f] = [];
+      for (let p = 1; p <= 4; p++) {
+        const leftB = this.findBone(root, `LeftHand${fName}${p}`);
+        if (leftB) this.bones.leftFingers[f].push(leftB);
+
+        const rightB = this.findBone(root, `RightHand${fName}${p}`);
+        if (rightB) this.bones.rightFingers[f].push(rightB);
+      }
+    }
+
+    // Cache rest transforms for all discovered bones
+    root.traverse((child) => {
+      if (child instanceof THREE.Bone) {
+        this.restTransforms.set(child.name, {
+          bone: child,
+          pos: child.position.clone(),
+          rot: child.rotation.clone(),
+          quat: child.quaternion.clone()
+        });
+      }
+    });
+
+    // Detect model vertical framing center
+    if (this.bones.spine2) {
+      const wp = new THREE.Vector3();
+      this.bones.spine2.getWorldPosition(wp);
+      this.modelCenterY = wp.y || 1.35;
+      this.applyCameraPreset('CHEST_SIGNING');
+    }
+  }
+
+  private applyVisualStyleToModel(): void {
+    if (!this.model) return;
+    const isHolo = this.visualStyle === 'CYBER_HOLOGRAM';
+
+    this.model.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        if (isHolo) {
+          child.material = this.holoMaterial;
+        } else {
+          const original = this.originalMaterials.get(child);
+          if (original) child.material = original;
+        }
+      }
+    });
+
+    this.hologramPedestalGroup.visible = isHolo;
+    this.hologramUpLight.visible = isHolo;
+  }
+
+  public setVisualStyle(style: VisualStyle): void {
+    if (this.visualStyle === style) return;
+    this.visualStyle = style;
+    this.applyVisualStyleToModel();
+    this.render();
+  }
+
+  public updateAppearance(options: Partial<AvatarOptions>): void {
+    if (options.visualStyle) {
+      this.setVisualStyle(options.visualStyle);
+    }
+    if (options.backgroundColor) {
+      this.scene.background = new THREE.Color(options.backgroundColor);
+    }
+    this.render();
+  }
+
+  public applyCameraPreset(preset: CameraPreset): void {
+    this.activePreset = preset;
+    this.orbitY = 0;
+    this.orbitX = 0;
+    if (this.model) this.model.rotation.y = 0;
+
+    const cy = this.modelCenterY;
+
+    switch (preset) {
+      case 'CHEST_SIGNING':
+        this.camera.position.set(0, cy + 0.05, 1.65);
+        this.camera.lookAt(0, cy - 0.02, 0);
+        this.zoomDistance = 1.65;
+        break;
+      case 'HANDS_FOCUS':
+        this.camera.position.set(0, cy - 0.08, 1.15);
+        this.camera.lookAt(0, cy - 0.12, 0);
+        this.zoomDistance = 1.15;
+        break;
+      case 'FACE_NMM':
+        this.camera.position.set(0, cy + 0.28, 0.85);
+        this.camera.lookAt(0, cy + 0.25, 0);
+        this.zoomDistance = 0.85;
+        break;
+      case 'FREE_ORBIT':
+        break;
+    }
+
+    this.render();
+  }
+
+  public resetView(): void {
+    this.applyCameraPreset('CHEST_SIGNING');
+  }
+
+  private setupOrbitInteraction(): void {
+    const el = this.renderer.domElement;
+    el.style.touchAction = 'none';
+    el.style.cursor = 'grab';
+
+    const onPointerDown = (e: PointerEvent) => {
+      this.isDragging = true;
+      this.activePreset = 'FREE_ORBIT';
+      this.previousPointerPosition = { x: e.clientX, y: e.clientY };
+      el.style.cursor = 'grabbing';
+      el.setPointerCapture(e.pointerId);
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!this.isDragging) return;
+      const deltaX = e.clientX - this.previousPointerPosition.x;
+      const deltaY = e.clientY - this.previousPointerPosition.y;
+
+      this.orbitY += deltaX * 0.009;
+      this.orbitX = Math.max(-0.4, Math.min(0.5, this.orbitX + deltaY * 0.007));
+
+      if (this.model) this.model.rotation.y = this.orbitY;
+      this.camera.position.y = this.modelCenterY + 0.05 + this.orbitX;
+
+      this.previousPointerPosition = { x: e.clientX, y: e.clientY };
+      this.render();
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      this.isDragging = false;
+      el.style.cursor = 'grab';
+      try {
+        el.releasePointerCapture(e.pointerId);
+      } catch {
+        // ignore capture release errors
+      }
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      this.zoomDistance = Math.max(0.75, Math.min(2.8, this.zoomDistance + e.deltaY * 0.0015));
+      this.camera.position.z = this.zoomDistance;
+      this.render();
+    };
+
+    el.addEventListener('pointerdown', onPointerDown);
+    el.addEventListener('pointermove', onPointerMove);
+    el.addEventListener('pointerup', onPointerUp);
+    el.addEventListener('pointercancel', onPointerUp);
+    el.addEventListener('wheel', onWheel, { passive: false });
+  }
+
+  /**
+   * Main Pose Engine:
+   * Maps sign language InterpolatedPose directly to the realistic Mixamo/ReadyPlayerMe skeleton
+   * with Two-Handed Physical Contact Solver (Namaste prayer, Help fist-on-palm, etc.)
+   */
+  public updatePose(pose: InterpolatedPose): void {
+    if (this.disposed) return;
+
+    const now = Date.now() / 1000;
+
+    // Loading spinner animation if still downloading
+    if (this.loading && this.loadingSpinner) {
+      this.loadingSpinner.rotation.z += 0.05;
+      this.loadingSpinner.rotation.x = Math.sin(now * 2) * 0.2;
+      this.render();
+      return;
+    }
+
+    if (!this.model) return;
+
+    // 1. Natural Respiratory Chest Oscillation
+    const breath = Math.sin(now * 1.85) * 0.018;
+    if (this.bones.spine2) {
+      this.bones.spine2.rotation.x = breath * 0.4;
+    }
+    if (this.bones.leftShoulder) this.bones.leftShoulder.position.y = breath * 0.005;
+    if (this.bones.rightShoulder) this.bones.rightShoulder.position.y = breath * 0.005;
+
+    // 2. Head Gaze & Nod / Tilt
+    if (this.bones.head) {
+      this.bones.head.rotation.set(
+        pose.face.headRotation[0] * 0.7,
+        pose.face.headRotation[1] * 0.7,
+        pose.face.headRotation[2] * 0.7
+      );
+    }
+
+    // 3. Two-Handed Interaction & Contact Solver
+    const rawL = pose.leftHand.position || [-0.15, -0.1, 0.2];
+    const rawR = pose.rightHand.position || [0.15, -0.1, 0.2];
+
+    const isCenterTwoHanded = Math.abs(rawL[0]) <= 0.08 && Math.abs(rawR[0]) <= 0.08;
+    const distTarget = Math.hypot(rawR[0] - rawL[0], rawR[1] - rawL[1], rawR[2] - rawL[2]);
+
+    let isPrayingNamaste = false;
+    let isSupportHelp = false;
+
+    if (isCenterTwoHanded || distTarget < 0.16) {
+      const leftExt = (pose.leftHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
+      const rightExt = (pose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
+      const rightFist = (pose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) > 0.6;
+
+      if (leftExt && rightExt) {
+        isPrayingNamaste = true;
+      } else if (leftExt && rightFist) {
+        isSupportHelp = true;
+      }
+    }
+
+    // 4. Arm Kinematics (Forward Signing Space Orientation + Adduction)
+    // Left Arm Mapping
+    if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
+      if (isPrayingNamaste) {
+        // Namaste prayer pose: arms adducted to center, palms together
+        this.bones.leftArm.rotation.set(0.65, 0.2, 0.95);
+        this.bones.leftForeArm.rotation.set(0.2, 0.3, 1.35);
+        this.bones.leftHand.rotation.set(0, 0.5, 0.3);
+      } else if (isSupportHelp) {
+        // Help pose: open palm at center waist level
+        this.bones.leftArm.rotation.set(0.55, 0.1, 0.75);
+        this.bones.leftForeArm.rotation.set(0.3, 0.2, 1.15);
+        this.bones.leftHand.rotation.set(0.8, 0, 0);
+      } else {
+        // General signing kinematics from pose
+        const pitchL = Math.max(0.1, pose.leftArm.shoulderRotation[0]);
+        const rollL = pose.leftArm.shoulderRotation[1];
+        const yawL = pose.leftArm.shoulderRotation[2];
+        const elbowL = Math.max(0.2, pose.leftArm.elbowAngle);
+
+        this.bones.leftArm.rotation.set(
+          pitchL * 0.85 + Math.abs(rawL[0]) * -0.4,
+          rollL * 0.6,
+          0.3 + pitchL * 0.95 + elbowL * 0.3
+        );
+        this.bones.leftForeArm.rotation.set(
+          pose.leftArm.forearmRoll * 0.5,
+          0.1,
+          elbowL * 0.85
+        );
+        this.bones.leftHand.rotation.set(
+          pose.leftHand.rotation[0],
+          pose.leftHand.rotation[1],
+          pose.leftHand.rotation[2]
+        );
+      }
+    }
+
+    // Right Arm Mapping
+    if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
+      if (isPrayingNamaste) {
+        // Namaste prayer pose: symmetrical meeting at chest
+        this.bones.rightArm.rotation.set(0.65, -0.2, -0.95);
+        this.bones.rightForeArm.rotation.set(-0.2, -0.3, -1.35);
+        this.bones.rightHand.rotation.set(0, -0.5, -0.3);
+      } else if (isSupportHelp) {
+        // Help pose: closed fist resting on left palm
+        this.bones.rightArm.rotation.set(0.65, -0.15, -0.85);
+        this.bones.rightForeArm.rotation.set(0, 0, -1.25);
+        this.bones.rightHand.rotation.set(0, 0, 0);
+      } else {
+        const pitchR = Math.max(0.1, pose.rightArm.shoulderRotation[0]);
+        const rollR = pose.rightArm.shoulderRotation[1];
+        const yawR = pose.rightArm.shoulderRotation[2];
+        const elbowR = Math.max(0.2, pose.rightArm.elbowAngle);
+
+        this.bones.rightArm.rotation.set(
+          pitchR * 0.85 + Math.abs(rawR[0]) * -0.4,
+          rollR * 0.6,
+          -0.3 - pitchR * 0.95 - elbowR * 0.3
+        );
+        this.bones.rightForeArm.rotation.set(
+          pose.rightArm.forearmRoll * 0.5,
+          -0.1,
+          -elbowR * 0.85
+        );
+        this.bones.rightHand.rotation.set(
+          pose.rightHand.rotation[0],
+          pose.rightHand.rotation[1],
+          pose.rightHand.rotation[2]
+        );
+      }
+    }
+
+    // 5. 5-Finger Cascading Phalanges Articulation (Thumb, Index, Middle, Ring, Pinky)
+    for (let f = 0; f < 5; f++) {
+      const curlL = isPrayingNamaste ? 0 : (pose.leftHand.curl[f] ?? 0);
+      const leftChain = this.bones.leftFingers[f];
+      if (leftChain) {
+        for (let p = 0; p < leftChain.length; p++) {
+          const b = leftChain[p];
+          if (f === 0) {
+            // Thumb saddle opposition
+            b.rotation.x = curlL * 0.45;
+            b.rotation.z = curlL * 0.35;
+          } else {
+            // Finger knuckle & interphalangeal flexion
+            b.rotation.z = curlL * 0.75;
+          }
+        }
+      }
+
+      const curlR = isPrayingNamaste ? (isSupportHelp ? 0.9 : 0) : (pose.rightHand.curl[f] ?? 0);
+      const rightChain = this.bones.rightFingers[f];
+      if (rightChain) {
+        for (let p = 0; p < rightChain.length; p++) {
+          const b = rightChain[p];
+          if (f === 0) {
+            b.rotation.x = curlR * 0.45;
+            b.rotation.z = -curlR * 0.35;
+          } else {
+            b.rotation.z = -curlR * 0.75;
+          }
+        }
+      }
+    }
+
+    // 6. Hologram Floor Pedestal Rotation
+    if (this.visualStyle === 'CYBER_HOLOGRAM') {
+      this.hologramRing1.rotation.z += 0.015;
+      this.hologramRing2.rotation.z -= 0.01;
+      const pulse = Math.sin(now * 3.5) * 0.12 + 0.88;
+      (this.hologramRing1.material as THREE.MeshBasicMaterial).opacity = 0.75 * pulse;
+      (this.hologramRing2.material as THREE.MeshBasicMaterial).opacity = 0.5 * pulse;
+    }
+
+    this.render();
+  }
+
+  public resize(): void {
+    if (this.disposed) return;
+    const width = this.container.clientWidth || 360;
+    const height = this.container.clientHeight || 420;
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(width, height);
+    this.render();
+  }
+
+  private render(): void {
+    if (!this.disposed && this.renderer) {
+      this.renderer.render(this.scene, this.camera);
+    }
+  }
+
+  public isLoading(): boolean {
+    return this.loading;
+  }
+
+  public hasError(): boolean {
+    return this.loadError;
+  }
+
+  public dispose(): void {
+    this.disposed = true;
+    if (this.renderer) {
+      this.renderer.dispose();
+      if (this.container && this.renderer.domElement && this.container.contains(this.renderer.domElement)) {
+        this.container.removeChild(this.renderer.domElement);
+      }
+    }
+  }
+}
