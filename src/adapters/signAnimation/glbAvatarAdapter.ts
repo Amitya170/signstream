@@ -528,20 +528,20 @@ export class GlbAvatarRig {
 
     // 5. Anatomical Arm & Hand Solving with Biomechanical Kinematic Accuracy
     if (isNamasteSign) {
-      // Symmetrical Pad-to-Pad Flush Contact Physics:
-      // Forearms pitch forward identically (+0.45) so hands meet in the same exact Z-depth plane
-      // Wrists have zero lateral deviation (Z = 0.0) preventing scissor crossing or finger penetration
-      const armPitch = 0.48;
+      // Authentic Sacred Anjali Mudra (Indian Namaste):
+      // Hands held at mid-chest (sternum), palms pressed flush pad-to-pad,
+      // all 10 fingers pointing vertically straight UPWARDS towards the chin.
+      const armPitch = 0.60;
       const armRoll = 0.08;
-      const armAdduct = 1.05;
+      const armAdduct = 0.98;
       
-      const forePitch = 0.45;
-      const foreYaw = 0.15;
-      const foreElbow = 0.85;
+      const forePitch = -0.20; // Upward pitch lifting hands to mid-chest
+      const foreYaw = 0.40;    // Angles forearms inward towards center
+      const foreElbow = 1.40;  // Deep elbow flexion positioning hands at sternum
 
-      const wristPitch = -0.75;
-      const wristYaw = 0.35;
-      const wristRoll = 0.0; // 0 lateral deviation prevents fingers crossing over midline
+      const wristPitch = -1.15; // Dorsal extension pointing fingers vertically straight UP
+      const wristYaw = -0.35;   // Turns palms flush against each other pad-to-pad
+      const wristRoll = 0.35;   // Symmetrical coronal alignment
 
       if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
         this.bones.leftArm.rotation.set(armPitch, armRoll, armAdduct);
@@ -556,14 +556,14 @@ export class GlbAvatarRig {
     } else if (isHelpSign) {
       // Authentic Help Sign: Right fist resting on flat upward-facing left palm
       if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
-        this.bones.leftArm.rotation.set(0.38, 0.15, 1.22);
-        this.bones.leftForeArm.rotation.set(0.1, 0.7, 1.45);
-        this.bones.leftHand.rotation.set(-0.1, 0.6, 0.4);
+        this.bones.leftArm.rotation.set(0.48, 0.15, 1.15);
+        this.bones.leftForeArm.rotation.set(-0.15, 0.6, 1.45);
+        this.bones.leftHand.rotation.set(-0.5, 0.6, 0.4);
       }
       if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
-        this.bones.rightArm.rotation.set(0.48, -0.15, -1.2);
-        this.bones.rightForeArm.rotation.set(-0.1, -0.55, -1.55);
-        this.bones.rightHand.rotation.set(0.15, -0.2, -0.2);
+        this.bones.rightArm.rotation.set(0.55, -0.15, -1.1);
+        this.bones.rightForeArm.rotation.set(-0.25, -0.55, -1.55);
+        this.bones.rightHand.rotation.set(-0.4, -0.2, -0.2);
       }
     } else {
       // True 3D Kinematic Spatial Solving: Translates target Hand Coordinates (X, Y, Z) into Authentic ISL Articulation
@@ -582,44 +582,43 @@ export class GlbAvatarRig {
           const targetY = rawR[1];
           const targetZ = rawR[2];
 
-          // 1. Shoulder Pitch: Combines keyframe shoulder pitch with vertical target elevation
-          const basePitchR = pose.rightArm?.shoulderRotation?.[0]
-            ? pose.rightArm.shoulderRotation[0] * 0.95
-            : 0.24 + (targetY + 0.05) * 0.95;
+          // 1. Shoulder Pitch: Elevates arm comfortably into chest/chin signing space
+          const basePitchR = 0.42 + (targetY + 0.08) * 0.95;
           const rPitch = targetY > 0.30
-            ? Math.max(basePitchR, 0.38 + (targetY - 0.30) * 1.1)
+            ? Math.max(basePitchR, 0.52 + (targetY - 0.30) * 1.1)
             : basePitchR;
-          const clampedPitchR = Math.max(0.15, Math.min(1.42, rPitch));
+          const clampedPitchR = Math.max(0.25, Math.min(1.42, rPitch));
 
           // 2. Shoulder Adduction: Precise lateral tracking without cross-body skew
-          const adductionR = -1.28 + Math.min(0.48, Math.max(-0.45, (0.18 - targetX) * 0.88));
+          const adductionR = -1.25 + Math.min(0.48, Math.max(-0.45, (0.18 - targetX) * 0.88));
 
           // 3. Elbow Flexion: Uses calibrated keyframe elbow with distance compensation
           const baseElbowR = pose.rightArm?.elbowAngle
             ? pose.rightArm.elbowAngle * 0.95
-            : Math.max(0.4, 1.45 - (targetZ - 0.2) * 1.6);
+            : Math.max(0.45, 1.45 - (targetZ - 0.2) * 1.6);
           const rElbow = targetY > 0.30 && targetZ < 0.26
             ? Math.max(baseElbowR, 1.55 + (targetY - 0.30) * 0.6)
             : baseElbowR;
 
-          // 4. Forearm Orientation: Roll and Yaw
+          // 4. Forearm Orientation: Negative pitch keeps hands elevated in front of chest/face
           const foreRollR = pose.rightArm?.forearmRoll || -0.25;
-          const rForePitch = 0.12 + (targetY > 0.25 ? (targetY - 0.25) * 0.35 : 0);
+          const rForePitch = -0.20 + (targetY > 0.25 ? -(targetY - 0.25) * 0.35 : 0);
 
           this.bones.rightArm.rotation.set(clampedPitchR, -0.10, adductionR);
           this.bones.rightForeArm.rotation.set(rForePitch, foreRollR, -rElbow);
 
-          // 5. Wrist & Hand Rotation: Combine keyframe rotation with spatial contact orientation
+          // 5. Wrist & Hand Rotation: Natural dorsal extension prevents drooping limp wrists
           if (targetY > 0.30 && targetZ < 0.28) {
             // Tilting palm towards face/chin for mouth, chin, or temple contact
             this.bones.rightHand.rotation.set(
-              -0.25 + (targetZ - 0.20) * 0.5,
+              -0.75 + (targetZ - 0.20) * 0.5,
               0.15 + pose.rightHand.rotation[1] * 0.5,
               -0.05 + pose.rightHand.rotation[2] * 0.5
             );
           } else {
+            const wristPitch = -0.45 + (pose.rightHand.rotation[0] || 0) * 0.8;
             this.bones.rightHand.rotation.set(
-              pose.rightHand.rotation[0],
+              wristPitch,
               pose.rightHand.rotation[1],
               pose.rightHand.rotation[2]
             );
@@ -640,35 +639,34 @@ export class GlbAvatarRig {
           const targetZ = rawL[2];
 
           // 1. Shoulder Pitch
-          const basePitchL = pose.leftArm?.shoulderRotation?.[0]
-            ? pose.leftArm.shoulderRotation[0] * 0.95
-            : 0.24 + (targetY + 0.05) * 0.95;
+          const basePitchL = 0.42 + (targetY + 0.08) * 0.95;
           const lPitch = targetY > 0.30
-            ? Math.max(basePitchL, 0.38 + (targetY - 0.30) * 1.1)
+            ? Math.max(basePitchL, 0.52 + (targetY - 0.30) * 1.1)
             : basePitchL;
-          const clampedPitchL = Math.max(0.15, Math.min(1.42, lPitch));
+          const clampedPitchL = Math.max(0.25, Math.min(1.42, lPitch));
 
           // 2. Shoulder Adduction
-          const adductionL = 1.28 - Math.min(0.48, Math.max(-0.45, (targetX + 0.18) * 0.88));
+          const adductionL = 1.25 - Math.min(0.48, Math.max(-0.45, (targetX + 0.18) * 0.88));
 
           // 3. Elbow Flexion
           const baseElbowL = pose.leftArm?.elbowAngle
             ? pose.leftArm.elbowAngle * 0.95
-            : Math.max(0.4, 1.45 - (targetZ - 0.2) * 1.6);
+            : Math.max(0.45, 1.45 - (targetZ - 0.2) * 1.6);
           const lElbow = targetY > 0.30 && targetZ < 0.26
             ? Math.max(baseElbowL, 1.55 + (targetY - 0.30) * 0.6)
             : baseElbowL;
 
-          // 4. Forearm Orientation
+          // 4. Forearm Orientation: Negative pitch keeps hands elevated in front of chest/face
           const foreRollL = pose.leftArm?.forearmRoll || 0.25;
-          const lForePitch = 0.12 + (targetY > 0.25 ? (targetY - 0.25) * 0.35 : 0);
+          const lForePitch = -0.20 + (targetY > 0.25 ? -(targetY - 0.25) * 0.35 : 0);
 
           this.bones.leftArm.rotation.set(clampedPitchL, 0.10, adductionL);
           this.bones.leftForeArm.rotation.set(lForePitch, foreRollL, lElbow);
 
           // 5. Wrist
+          const wristPitchL = -0.45 + (pose.leftHand.rotation[0] || 0) * 0.8;
           this.bones.leftHand.rotation.set(
-            pose.leftHand.rotation[0],
+            wristPitchL,
             pose.leftHand.rotation[1],
             pose.leftHand.rotation[2]
           );
