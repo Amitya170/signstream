@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Camera, Mic, Wifi, WifiOff, Settings as SettingsIcon } from 'lucide-react';
 import { permissionManager } from '../lib/permissions';
-import { PrototypeNotice } from './PrototypeNotice';
 
 export const Navbar: React.FC = () => {
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
@@ -29,7 +28,6 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
-      <PrototypeNotice />
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         {/* Brand Link */}
         <Link

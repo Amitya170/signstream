@@ -1,12 +1,11 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Project SignStream E2E Smoke Tests', () => {
-  test('home page loads with persistent prototype disclaimer and cards', async ({ page }) => {
+  test('home page loads with clean navbar branding and cards', async ({ page }) => {
     await page.goto('/');
 
-    // Check Prototype Disclaimer is visible
-    await expect(page.getByText('RESEARCH PROTOTYPE')).toBeVisible();
-    await expect(page.getByText('Not a certified Indian Sign Language (ISL) interpreter.')).toBeVisible();
+    // Check Clean Navbar Branding is visible
+    await expect(page.getByLabel('Project SignStream Home')).toBeVisible();
 
     // Check the three primary feature cards
     await expect(page.getByRole('heading', { name: 'Speech to Sign' })).toBeVisible();

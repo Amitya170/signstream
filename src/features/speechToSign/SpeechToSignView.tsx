@@ -243,19 +243,19 @@ export const SpeechToSignView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 space-y-4">
       {/* Header & Language Selection */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-800/80">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-white tracking-tight">
-              Speech to Sign
+            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              Speech to Sign Studio
             </h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-teal-500/10 text-teal-400 border border-teal-500/30">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-teal-500/15 text-teal-400 border border-teal-500/30">
               Live Stream
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             Real-time ISL sentence compilation with natural co-articulation and synchronized teleprompter.
           </p>
         </div>
@@ -288,330 +288,339 @@ export const SpeechToSignView: React.FC = () => {
         </div>
       </div>
 
-      {/* Avatar Stage with Real-Time Time Tracking & Preset Controls */}
-      <AvatarStage
-        clip={activeClip}
-        showCaption={true}
-        onTimeUpdate={handleTimeUpdate}
-        seekTimeMs={seekTargetTimeMs}
-        className="w-full shadow-2xl rounded-2xl overflow-hidden border border-slate-800/80 bg-slate-950"
-      />
+      {/* Responsive Studio 3.0 Dual-Pane Layout: Left 3D Viewport & Prompter, Right Command Console */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Left Pane: 3D Sign Avatar Stage & Live Teleprompter (7 cols on desktop) */}
+        <div className="lg:col-span-7 space-y-4">
+          {/* Avatar Stage with Real-Time Time Tracking & Preset Controls */}
+          <AvatarStage
+            clip={activeClip}
+            showCaption={true}
+            onTimeUpdate={handleTimeUpdate}
+            seekTimeMs={seekTargetTimeMs}
+            className="w-full shadow-2xl rounded-2xl overflow-hidden border border-slate-800/80 bg-slate-950"
+          />
 
-      {/* Synchronized Live Word Teleprompter Strip */}
-      {sentencePackage && sentencePackage.words.length > 0 && (
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-slate-950/95 border border-slate-800 shadow-xl space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-              </span>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-300">
-                Live Sentence Teleprompter
-              </span>
+          {/* Synchronized Live Word Teleprompter Strip */}
+          {sentencePackage && sentencePackage.words.length > 0 && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-slate-950/95 border border-slate-800 shadow-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+                  </span>
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-300">
+                    Live Sentence Teleprompter
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  {sentencePackage.words.length} signs · {(sentencePackage.totalDurationMs / 1000).toFixed(1)}s continuous
+                </span>
+              </div>
+
+              {/* Interactive Word Chips Bar */}
+              <div className="flex flex-wrap gap-2 items-center">
+                {sentencePackage.words.map((word) => {
+                  const isActive = activeWordId === word.id;
+                  return (
+                    <button
+                      key={word.id}
+                      type="button"
+                      onClick={() => handleWordChipClick(word)}
+                      aria-label={`Jump avatar to sign: ${word.originalWord}`}
+                      className={`group px-3 py-2 rounded-xl text-left transition-all border ${
+                        isActive
+                          ? 'bg-teal-500/15 border-teal-400/90 text-white shadow-lg shadow-teal-950/50 scale-105 ring-1 ring-teal-400/50'
+                          : 'bg-slate-800/70 border-slate-700/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold capitalize">{word.originalWord}</span>
+                        {word.isFingerspelled ? (
+                          <span className="text-[9px] px-1 py-0.2 rounded font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            A-Z
+                          </span>
+                        ) : word.clip.provenance.source?.includes('Web') || word.clip.provenance.source?.includes('Improviser') ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-mono bg-indigo-500/25 text-indigo-300 border border-indigo-500/40" title="Auto-Learned via Web / Semantic Improviser">
+                            ✨ Web Learned
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="text-[10px] font-mono text-teal-400/80 truncate max-w-[130px]">
+                        {word.islGloss}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* ISL Grammar Sequence Formula */}
+              <div className="pt-2 border-t border-slate-800/70 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-slate-400">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-slate-300">ISL Grammatical Flow:</span>
+                  <code className="text-teal-300 font-mono text-[10px] bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                    {sentencePackage.islGrammarSyntax}
+                  </code>
+                </div>
+                {sentencePackage.grammarAnalysis.explanation && (
+                  <span className="text-amber-400/90 text-[10px]">
+                    NMM: {sentencePackage.grammarAnalysis.explanation}
+                  </span>
+                )}
+              </div>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">
-              {sentencePackage.words.length} signs · {(sentencePackage.totalDurationMs / 1000).toFixed(1)}s continuous
-            </span>
-          </div>
+          )}
+        </div>
 
-          {/* Interactive Word Chips Bar */}
-          <div className="flex flex-wrap gap-2 items-center">
-            {sentencePackage.words.map((word) => {
-              const isActive = activeWordId === word.id;
-              return (
+        {/* Right Pane: Command Console & Linguistic Coverage (5 cols on desktop) */}
+        <div className="lg:col-span-5 space-y-4">
+          {/* Input Control Box */}
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg space-y-3">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleTranslate(inputText);
+              }}
+              className="space-y-3"
+            >
+              <div className="relative">
+                <input
+                  type="text"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder={
+                    language === 'hi'
+                      ? 'कोई शब्द या वाक्य लिखें या बोलें...'
+                      : 'Type or speak any sentence...'
+                  }
+                  className="w-full min-h-touch px-4 py-3 bg-slate-950 border-2 border-slate-700/80 focus:border-brand-500 rounded-xl text-white placeholder-slate-500 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 transition-colors shadow-inner"
+                />
+                {inputText && (
+                  <button
+                    type="button"
+                    onClick={() => setInputText('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white px-1.5 py-1"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {/* Mic Button */}
                 <button
-                  key={word.id}
                   type="button"
-                  onClick={() => handleWordChipClick(word)}
-                  aria-label={`Jump avatar to sign: ${word.originalWord}`}
-                  className={`group px-3 py-2 rounded-xl text-left transition-all border ${
-                    isActive
-                      ? 'bg-teal-500/15 border-teal-400/90 text-white shadow-lg shadow-teal-950/50 scale-105 ring-1 ring-teal-400/50'
-                      : 'bg-slate-800/70 border-slate-700/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+                  onClick={handleToggleMic}
+                  className={`min-h-touch px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border transition-all ${
+                    isListening
+                      ? 'bg-rose-600 hover:bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-900/40 animate-pulse'
+                      : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-slate-700'
                   }`}
+                  aria-label={isListening ? 'Stop microphone' : 'Start speaking'}
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold capitalize">{word.originalWord}</span>
-                    {word.isFingerspelled ? (
-                      <span className="text-[9px] px-1 py-0.2 rounded font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        A-Z
-                      </span>
-                    ) : word.clip.provenance.source?.includes('Web') || word.clip.provenance.source?.includes('Improviser') ? (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded font-mono bg-indigo-500/25 text-indigo-300 border border-indigo-500/40" title="Auto-Learned via Web / Semantic Improviser">
-                        ✨ Web Learned
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="text-[10px] font-mono text-teal-400/80 truncate max-w-[130px]">
-                    {word.islGloss}
-                  </div>
+                  {isListening ? (
+                    <MicOff className="w-4 h-4" />
+                  ) : (
+                    <Mic className="w-4 h-4 text-brand-400" />
+                  )}
+                  <span>{isListening ? (sttStatus === 'downloading' ? 'Loading...' : 'Listening...') : 'Speak'}</span>
                 </button>
-              );
-            })}
-          </div>
 
-          {/* ISL Grammar Sequence Formula */}
-          <div className="pt-2 border-t border-slate-800/70 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-slate-400">
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-slate-300">ISL Grammatical Flow:</span>
-              <code className="text-teal-300 font-mono text-[10px] bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-                {sentencePackage.islGrammarSyntax}
-              </code>
-            </div>
-            {sentencePackage.grammarAnalysis.explanation && (
-              <span className="text-amber-400/90 text-[10px]">
-                NMM: {sentencePackage.grammarAnalysis.explanation}
-              </span>
+                {/* Translate Button */}
+                <button
+                  type="submit"
+                  disabled={translating || !inputText.trim()}
+                  className="min-h-touch px-3 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-40 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand-900/40 focus-visible:ring-2 transition-all active:scale-95"
+                >
+                  {translating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  <span>Translate</span>
+                </button>
+              </div>
+            </form>
+
+            {/* Real-time Audio Spectrum & Deaf Voice Alert Indicator */}
+            {isListening && (
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span className="flex items-center gap-1.5 font-bold text-teal-400">
+                    <Activity className="w-4 h-4 animate-pulse" />
+                    Live Acoustic Monitor
+                  </span>
+                  <span>Visualizing voice</span>
+                </div>
+                <AudioWaveformVisualizer stream={micStream} isActive={isListening} />
+              </div>
+            )}
+
+            {/* STT Privacy & Active Engine Bar */}
+            {sttPrivacyNotice && (
+              <div className="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-brand-400 shrink-0" />
+                <span className="truncate">
+                  <strong>Active STT:</strong> {sttEngineName}
+                </span>
+              </div>
             )}
           </div>
-        </div>
-      )}
 
-      {/* Input Control Box */}
-      <div className="space-y-3">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleTranslate(inputText);
-          }}
-          className="flex flex-col sm:flex-row gap-2"
-        >
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder={
-                language === 'hi'
-                  ? 'कोई शब्द या वाक्य लिखें या बोलें (उदा. मुझे डॉक्टर चाहिए)...'
-                  : 'Type or speak any sentence (e.g., Where is the doctor, Need water)...'
-              }
-              className="w-full min-h-touch px-4 py-3 bg-slate-900 border-2 border-slate-700/80 focus:border-brand-500 rounded-xl text-white placeholder-slate-500 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 transition-colors shadow-inner"
-            />
-            {inputText && (
+          {/* STT Error Notification */}
+          {sttError && (
+            <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/40 text-xs text-rose-300 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+              <span>{sttError}</span>
+            </div>
+          )}
+
+          {/* Commercial Domain Scenarios & Quick Phrases */}
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Quick Scenarios & Vocabulary
+              </span>
+              <span className="text-[10px] text-slate-500">Tap to translate</span>
+            </div>
+
+            {/* Category Selector Tabs */}
+            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
               <button
                 type="button"
-                onClick={() => setInputText('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white px-1.5 py-1"
+                onClick={() => setActiveCategory('essential')}
+                className={`min-h-[34px] px-2.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap border ${
+                  activeCategory === 'essential'
+                    ? 'bg-slate-800 text-teal-400 border-teal-500/50 shadow-sm'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                }`}
               >
-                Clear
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Everyday</span>
               </button>
-            )}
-          </div>
 
-          <div className="flex items-center gap-2">
-            {/* Mic Button */}
-            <button
-              type="button"
-              onClick={handleToggleMic}
-              className={`min-h-touch min-w-touch px-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 border transition-all ${
-                isListening
-                  ? 'bg-rose-600 hover:bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-900/40 animate-pulse'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-              }`}
-              aria-label={isListening ? 'Stop microphone' : 'Start speaking'}
-            >
-              {isListening ? (
-                <MicOff className="w-5 h-5" />
-              ) : (
-                <Mic className="w-5 h-5 text-brand-400" />
-              )}
-              <span>{isListening ? (sttStatus === 'downloading' ? 'Loading model...' : 'Listening...') : 'Speak'}</span>
-            </button>
-
-            {/* Translate Button */}
-            <button
-              type="submit"
-              disabled={translating || !inputText.trim()}
-              className="min-h-touch px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-40 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand-900/40 focus-visible:ring-2 transition-all active:scale-95"
-            >
-              {translating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              <span>Translate</span>
-            </button>
-          </div>
-        </form>
-
-        {/* Real-time Audio Spectrum & Deaf Voice Alert Indicator */}
-        {isListening && (
-          <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
-            <div className="flex items-center justify-between text-xs text-slate-400">
-              <span className="flex items-center gap-1.5 font-bold text-teal-400">
-                <Activity className="w-4 h-4 animate-pulse" />
-                Live Acoustic Audio Monitor
-              </span>
-              <span>Visualizing speech for non-hearing users</span>
-            </div>
-            <AudioWaveformVisualizer stream={micStream} isActive={isListening} />
-          </div>
-        )}
-
-        {/* STT Privacy & Active Engine Bar */}
-        {sttPrivacyNotice && (
-          <div className="flex items-center gap-2 text-[11px] text-slate-400">
-            <ShieldCheck className="w-3.5 h-3.5 text-brand-400 shrink-0" />
-            <span>
-              <strong>Active STT:</strong> {sttEngineName} — {sttPrivacyNotice}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* STT Error Notification */}
-      {sttError && (
-        <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/40 text-xs text-rose-300 flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
-          <span>{sttError}</span>
-        </div>
-      )}
-
-      {/* Commercial Domain Scenarios & Quick Phrases */}
-      <div className="space-y-3 pt-2">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            Commercial Quick Scenarios & Vocabulary
-          </span>
-          <span className="text-[10px] text-slate-500">Tap to translate immediately</span>
-        </div>
-
-        {/* Category Selector Tabs */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setActiveCategory('essential')}
-            className={`min-h-[36px] px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap border ${
-              activeCategory === 'essential'
-                ? 'bg-slate-800 text-teal-400 border-teal-500/50 shadow-sm'
-                : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Everyday (दैनिक)</span>
-          </button>
-
-          {DOMAIN_PACKS.map((dp) => (
-            <button
-              key={dp.id}
-              type="button"
-              onClick={() => setActiveCategory(dp.id)}
-              className={`min-h-[36px] px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap border ${
-                activeCategory === dp.id
-                  ? 'bg-slate-800 text-teal-400 border-teal-500/50 shadow-sm'
-                  : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200'
-              }`}
-            >
-              {getDomainIcon(dp.id)}
-              <span>{language === 'hi' ? dp.nameHi : dp.name}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Quick Phrase Chips Grid */}
-        <div className="flex flex-wrap gap-1.5">
-          {activeCategory === 'essential' &&
-            essentialPhrases.map((item) => {
-              const label = language === 'hi' ? item.hi : item.en;
-              return (
+              {DOMAIN_PACKS.map((dp) => (
                 <button
-                  key={item.en}
+                  key={dp.id}
                   type="button"
-                  onClick={() => {
-                    setInputText(label);
-                    handleTranslate(label);
-                  }}
-                  className="px-3 py-1.5 min-h-[34px] rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 text-xs font-medium transition-all shadow-sm active:scale-95"
+                  onClick={() => setActiveCategory(dp.id)}
+                  className={`min-h-[34px] px-2.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap border ${
+                    activeCategory === dp.id
+                      ? 'bg-slate-800 text-teal-400 border-teal-500/50 shadow-sm'
+                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                  }`}
                 >
-                  {label}
+                  {getDomainIcon(dp.id)}
+                  <span>{language === 'hi' ? dp.nameHi : dp.name}</span>
                 </button>
-              );
-            })}
+              ))}
+            </div>
 
-          {activeCategory !== 'essential' &&
-            DOMAIN_PACKS.find((dp) => dp.id === activeCategory)?.phrases.map((phrase) => {
-              const label = language === 'hi' ? phrase.textHi : phrase.text;
-              return (
-                <button
-                  key={phrase.text}
-                  type="button"
-                  onClick={() => {
-                    setInputText(label);
-                    handleTranslate(label);
-                  }}
-                  className="px-3 py-1.5 min-h-[34px] rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 text-xs font-medium transition-all shadow-sm active:scale-95"
-                >
-                  {label}
-                </button>
-              );
-            })}
-        </div>
-      </div>
+            {/* Quick Phrase Chips Grid */}
+            <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+              {activeCategory === 'essential' &&
+                essentialPhrases.map((item) => {
+                  const label = language === 'hi' ? item.hi : item.en;
+                  return (
+                    <button
+                      key={item.en}
+                      type="button"
+                      onClick={() => {
+                        setInputText(label);
+                        handleTranslate(label);
+                      }}
+                      className="px-2.5 py-1.5 min-h-[32px] rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 text-xs font-medium transition-all shadow-sm active:scale-95"
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
 
-      {/* Translation Coverage Analysis & Honesty Breakdown */}
-      {coverage && (
-        <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Linguistic Coverage Report
-            </span>
-            {coverage.fullMatch ? (
-              <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400">
-                <CheckCircle2 className="w-4 h-4" /> Full ISL Lexicon Match
-              </span>
-            ) : coverage.matchedSignClips.length > 0 ? (
-              <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-400">
-                <AlertCircle className="w-4 h-4" /> Partial Lexicon Match
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-400">
-                <AlertCircle className="w-4 h-4" /> No Direct Lexicon Match
-              </span>
-            )}
+              {activeCategory !== 'essential' &&
+                DOMAIN_PACKS.find((dp) => dp.id === activeCategory)?.phrases.map((phrase) => {
+                  const label = language === 'hi' ? phrase.textHi : phrase.text;
+                  return (
+                    <button
+                      key={phrase.text}
+                      type="button"
+                      onClick={() => {
+                        setInputText(label);
+                        handleTranslate(label);
+                      }}
+                      className="px-2.5 py-1.5 min-h-[32px] rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 text-xs font-medium transition-all shadow-sm active:scale-95"
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+            </div>
           </div>
 
-          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-            {coverage.explanation}
-          </p>
-
-          {/* Matched Signs Selector if multiple tokens */}
-          {coverage.matchedSignClips.length > 1 && (
-            <div className="pt-2 border-t border-slate-800 space-y-1.5">
-              <span className="text-xs font-semibold text-slate-400">
-                Play individual matched signs:
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {coverage.matchedSignClips.map((clip) => (
-                  <button
-                    key={clip.id}
-                    type="button"
-                    onClick={() => setActiveClip(clip)}
-                    className={`min-h-touch px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
-                      activeClip?.id === clip.id
-                        ? 'bg-brand-600 text-white border-brand-400 shadow-md'
-                        : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
-                    }`}
-                  >
-                    <span>{clip.gloss}</span>
-                    <TrustBadge level={clip.trustLevel} showDetailsButton={false} />
-                  </button>
-                ))}
+          {/* Translation Coverage Analysis & Honesty Breakdown */}
+          {coverage && (
+            <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-lg space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Linguistic Coverage
+                </span>
+                {coverage.fullMatch ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400">
+                    <CheckCircle2 className="w-4 h-4" /> Full ISL Lexicon Match
+                  </span>
+                ) : coverage.matchedSignClips.length > 0 ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-400">
+                    <AlertCircle className="w-4 h-4" /> Partial Lexicon Match
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-400">
+                    <AlertCircle className="w-4 h-4" /> No Direct Lexicon Match
+                  </span>
+                )}
               </div>
-            </div>
-          )}
 
-          {/* Unsupported Token Warning */}
-          {coverage.unsupportedTokens.length > 0 && (
-            <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-xs text-amber-200 space-y-1">
-              <div className="font-bold flex items-center gap-1.5">
-                <Info className="w-4 h-4 text-amber-400" />
-                <span>Two-handed fingerspelling fallback applied for: [{coverage.unsupportedTokens.join(', ')}]</span>
-              </div>
-              <p className="text-amber-200/80">
-                Indian Sign Language does not translate words one-to-one from spoken grammar. Unmatched proper nouns or unseen words are signed using authentic ISL two-handed manual fingerspelling (A-Z).
+              <p className="text-xs text-slate-300 leading-relaxed">
+                {coverage.explanation}
               </p>
+
+              {/* Matched Signs Selector if multiple tokens */}
+              {coverage.matchedSignClips.length > 1 && (
+                <div className="pt-2 border-t border-slate-800 space-y-1.5">
+                  <span className="text-xs font-semibold text-slate-400">
+                    Individual signs:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {coverage.matchedSignClips.map((clip) => (
+                      <button
+                        key={clip.id}
+                        type="button"
+                        onClick={() => setActiveClip(clip)}
+                        className={`min-h-touch px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
+                          activeClip?.id === clip.id
+                            ? 'bg-brand-600 text-white border-brand-400 shadow-md'
+                            : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
+                        }`}
+                      >
+                        <span>{clip.gloss}</span>
+                        <TrustBadge level={clip.trustLevel} showDetailsButton={false} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Unsupported Token Warning */}
+              {coverage.unsupportedTokens.length > 0 && (
+                <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-xs text-amber-200 space-y-1">
+                  <div className="font-bold flex items-center gap-1.5">
+                    <Info className="w-4 h-4 text-amber-400" />
+                    <span>Two-handed fingerspelling fallback: [{coverage.unsupportedTokens.join(', ')}]</span>
+                  </div>
+                  <p className="text-amber-200/80 text-[11px]">
+                    Unmatched proper nouns or unseen words are signed using authentic ISL two-handed manual fingerspelling (A-Z).
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

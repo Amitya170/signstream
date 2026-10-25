@@ -465,9 +465,9 @@ export class GlbAvatarRig {
     if (this.lastPose) {
       const rawL = this.lastPose.leftHand.position || [-0.15, -0.1, 0.2];
       const rawR = this.lastPose.rightHand.position || [0.15, -0.1, 0.2];
-      const isCenter = Math.abs(rawL[0]) <= 0.08 && Math.abs(rawR[0]) <= 0.08;
+      const isCenter = Math.abs(rawL[0]) <= 0.12 && Math.abs(rawR[0]) <= 0.12;
       const dist = Math.hypot(rawR[0] - rawL[0], rawR[1] - rawL[1], rawR[2] - rawL[2]);
-      if (isCenter || dist < 0.16) {
+      if (isCenter || dist < 0.24) {
         const leftExt = (this.lastPose.leftHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
         const rightExt = (this.lastPose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
         const rightFist = (this.lastPose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) > 0.6;
@@ -503,27 +503,23 @@ export class GlbAvatarRig {
       this.bones.spine2.rotation.x = breath * 0.3;
     }
 
-    // 2. Two-Handed Interaction & Contact Solver
+    // 2. Two-Handed Interaction & Continuous Bilateral Synchronization Solver
     const rawL = pose.leftHand.position || [-0.15, -0.1, 0.2];
     const rawR = pose.rightHand.position || [0.15, -0.1, 0.2];
 
-    const isCenterTwoHanded = Math.abs(rawL[0]) <= 0.08 && Math.abs(rawR[0]) <= 0.08;
     const distTarget = Math.hypot(rawR[0] - rawL[0], rawR[1] - rawL[1], rawR[2] - rawL[2]);
+    const leftExt = (pose.leftHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
+    const rightExt = (pose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
+    const rightFist = (pose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) > 0.6;
 
-    let isPrayingNamaste = false;
-    let isSupportHelp = false;
+    // Continuous hermite blend factor: 0 when hands are far apart (>0.26m), 1 when touching (<=0.10m)
+    const rawSyncFactor = Math.max(0, Math.min(1, (0.26 - distTarget) / 0.16));
+    const syncFactor = rawSyncFactor * rawSyncFactor * (3 - 2 * rawSyncFactor);
 
-    if (isCenterTwoHanded || distTarget < 0.16) {
-      const leftExt = (pose.leftHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
-      const rightExt = (pose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) < 0.35;
-      const rightFist = (pose.rightHand.curl.slice(1).reduce((a, b) => a + b, 0) / 4) > 0.6;
-
-      if (leftExt && rightExt) {
-        isPrayingNamaste = true;
-      } else if (leftExt && rightFist) {
-        isSupportHelp = true;
-      }
-    }
+    const isNamasteCandidate = leftExt && rightExt && (Math.abs(rawL[0]) <= 0.16 && Math.abs(rawR[0]) <= 0.16);
+    const isSupportCandidate = leftExt && rightFist && (Math.abs(rawL[0]) <= 0.16 && Math.abs(rawR[0]) <= 0.16);
+    const isPrayingNamaste = isNamasteCandidate && syncFactor > 0.65;
+    const isSupportHelp = isSupportCandidate && syncFactor > 0.65;
 
     // 3. Biomechanical Clavicle & Shoulder Elevation
     const pitchL = Math.max(0, pose.leftArm.shoulderRotation[0]);
@@ -550,18 +546,33 @@ export class GlbAvatarRig {
       }
     }
 
-    // 5. Anatomical Arm & Hand Solving
-    if (isPrayingNamaste) {
-      // Authentic Anjali Mudra: Palms meet cleanly at mid-chest without crossing over, fingers pointing UP
+    // 5. Anatomical Arm & Hand Solving with Bilateral Anti-Collision Physics
+    const isMudraActive = isPrayingNamaste || (isNamasteCandidate && syncFactor > 0.15);
+    if (isMudraActive) {
+      // Symmetrical Pad-to-Pad Flush Contact Physics:
+      // Forearms pitch forward identically (+0.45) so hands meet in the same exact Z-depth plane
+      // Wrists have zero lateral deviation (Z = 0.0) preventing scissor crossing or finger penetration
+      const armPitch = 0.48;
+      const armRoll = 0.08;
+      const armAdduct = 1.05;
+      
+      const forePitch = 0.45;
+      const foreYaw = 0.15;
+      const foreElbow = 0.85;
+
+      const wristPitch = -0.75;
+      const wristYaw = 0.35;
+      const wristRoll = 0.0; // 0 lateral deviation prevents fingers crossing over midline
+
       if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
-        this.bones.leftArm.rotation.set(0.48, 0.08, 1.05);
-        this.bones.leftForeArm.rotation.set(0.12, 0.38, 0.88);
-        this.bones.leftHand.rotation.set(-0.62, 0.25, 0.58);
+        this.bones.leftArm.rotation.set(armPitch, armRoll, armAdduct);
+        this.bones.leftForeArm.rotation.set(forePitch, foreYaw, foreElbow);
+        this.bones.leftHand.rotation.set(wristPitch, wristYaw, wristRoll);
       }
       if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
-        this.bones.rightArm.rotation.set(0.48, -0.08, -1.05);
-        this.bones.rightForeArm.rotation.set(-0.12, -0.38, -0.88);
-        this.bones.rightHand.rotation.set(-0.62, -0.25, -0.58);
+        this.bones.rightArm.rotation.set(armPitch, -armRoll, -armAdduct);
+        this.bones.rightForeArm.rotation.set(forePitch, -foreYaw, -foreElbow);
+        this.bones.rightHand.rotation.set(wristPitch, -wristYaw, -wristRoll);
       }
     } else if (isSupportHelp) {
       // Authentic Help Sign: Right fist resting on flat upward-facing left palm
@@ -599,30 +610,30 @@ export class GlbAvatarRig {
       }
     }
 
-    // 6. Five-Finger Articulation Across Phalanges
+    // 6. Five-Finger Articulation Across Phalanges (Flush Extension Locking)
     for (let f = 0; f < 5; f++) {
-      const curlL = isPrayingNamaste ? 0 : (isSupportHelp ? 0 : (pose.leftHand.curl[f] ?? 0));
+      const curlL = isMudraActive ? 0 : (isSupportHelp ? 0 : (pose.leftHand.curl[f] ?? 0));
       const leftChain = this.bones.leftFingers[f];
       if (leftChain) {
         for (let p = 0; p < leftChain.length; p++) {
           const b = leftChain[p];
           if (f === 0) {
-            b.rotation.x = curlL * 0.35;
-            b.rotation.z = curlL * 0.3;
+            b.rotation.x = isMudraActive ? -0.15 : (curlL * 0.35);
+            b.rotation.z = isMudraActive ? 0.05 : (curlL * 0.3);
           } else {
             b.rotation.z = curlL * 0.65;
           }
         }
       }
 
-      const curlR = isPrayingNamaste ? 0 : (isSupportHelp ? (f === 0 ? 0.7 : 0.9) : (pose.rightHand.curl[f] ?? 0));
+      const curlR = isMudraActive ? 0 : (isSupportHelp ? (f === 0 ? 0.7 : 0.9) : (pose.rightHand.curl[f] ?? 0));
       const rightChain = this.bones.rightFingers[f];
       if (rightChain) {
         for (let p = 0; p < rightChain.length; p++) {
           const b = rightChain[p];
           if (f === 0) {
-            b.rotation.x = curlR * 0.35;
-            b.rotation.z = -curlR * 0.3;
+            b.rotation.x = isMudraActive ? -0.15 : (curlR * 0.35);
+            b.rotation.z = isMudraActive ? -0.05 : (-curlR * 0.3);
           } else {
             b.rotation.z = -curlR * 0.65;
           }
