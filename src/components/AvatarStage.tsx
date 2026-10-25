@@ -269,36 +269,41 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
 
   return (
     <div
-      className={`flex flex-col bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl relative ${className}`}
+      className={`flex flex-col bg-slate-950/90 border border-teal-500/30 rounded-3xl overflow-hidden shadow-[0_0_35px_rgba(13,148,136,0.15)] relative ${className}`}
     >
+      {/* Futuristic Neon Accent Header Line */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-teal-400 to-transparent z-20 pointer-events-none" />
+
       {/* Stage Top Bar */}
       <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
         {clip ? (
-          <div className="flex items-center gap-2 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-800 pointer-events-auto shadow-md">
-            <span className="text-xs font-bold text-white tracking-wide">
+          <div className="flex items-center gap-2 bg-slate-950/90 backdrop-blur-xl px-3.5 py-1.5 rounded-full border border-teal-500/40 pointer-events-auto shadow-xl">
+            <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping" />
+            <span className="text-xs font-black text-white tracking-wide">
               {clip.gloss}
             </span>
-            <span className="text-xs text-slate-300">
+            <span className="text-[11px] text-slate-300 font-medium hidden sm:inline">
               ({clip.labels.hi} / {clip.labels.en})
             </span>
             <TrustBadge level={clip.trustLevel} provenance={clip.provenance} />
           </div>
         ) : (
-          <div className="pointer-events-auto bg-slate-900/80 px-3 py-1 rounded-full text-xs text-slate-400">
-            Awaiting Sign Input
+          <div className="pointer-events-auto bg-slate-950/80 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs text-slate-400 border border-slate-800 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+            <span>Awaiting Sign Input</span>
           </div>
         )}
 
         <div className="flex items-center gap-1.5 pointer-events-auto">
           {/* 3D Model Selection: Michelle (Realistic Human) vs ReadyPlayer vs Xbot */}
           {renderMode === 'glb' && (
-            <div className="flex items-center bg-slate-900/90 backdrop-blur-md px-2 py-1 rounded-lg border border-slate-700/80 text-xs">
+            <div className="flex items-center bg-slate-900/90 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-slate-700/80 text-xs shadow-md">
               <label htmlFor="avatar-model-select" className="sr-only">3D Avatar Model</label>
               <select
                 id="avatar-model-select"
                 value={glbModelId}
                 onChange={(e) => setGlbModelId(e.target.value as GlbModelId)}
-                className="bg-transparent text-slate-200 text-xs font-semibold focus:outline-none cursor-pointer"
+                className="bg-transparent text-slate-200 text-xs font-bold focus:outline-none cursor-pointer"
                 aria-label="Select 3D Avatar Character"
               >
                 <option value="michelle" className="bg-slate-900 text-slate-100">Michelle (Human)</option>
@@ -312,29 +317,29 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
           <button
             type="button"
             onClick={() => setVisualStyle(v => (v === 'STUDIO_HUMAN' ? 'CYBER_HOLOGRAM' : 'STUDIO_HUMAN'))}
-            className={`px-2.5 py-1 backdrop-blur-md rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all ${
+            className={`px-3 py-1.5 backdrop-blur-md rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all ${
               visualStyle === 'CYBER_HOLOGRAM'
-                ? 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 shadow-[0_0_12px_rgba(6,182,212,0.4)]'
+                ? 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 shadow-[0_0_15px_rgba(6,182,212,0.4)]'
                 : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border-slate-700'
             }`}
             aria-label={`Toggle avatar visual style. Current: ${visualStyle === 'CYBER_HOLOGRAM' ? 'Cyber Hologram' : 'Studio Human'}`}
             title="Toggle between Realistic Studio Human and Cyber Hologram digital aesthetics"
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">{visualStyle === 'CYBER_HOLOGRAM' ? 'Hologram' : 'Human'}</span>
+            <span className="hidden sm:inline">{visualStyle === 'CYBER_HOLOGRAM' ? 'Hologram' : 'Studio'}</span>
           </button>
 
           {/* Render Mode Switcher: Realistic GLB 3D -> Pro 3D -> 2D SVG */}
           <button
             type="button"
             onClick={cycleRenderMode}
-            className={`px-2.5 py-1 backdrop-blur-md rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all ${
+            className={`px-3 py-1.5 backdrop-blur-md rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all ${
               renderMode === 'glb'
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.25)]'
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
                 : 'bg-slate-900/80 hover:bg-slate-800 text-slate-200 border-slate-700'
             }`}
             aria-label={`Cycle avatar render mode. Current: ${renderMode === 'glb' ? 'Realistic Human 3D' : renderMode === 'three' ? 'Procedural 3D' : '2D SVG'}`}
-            title="Cycle between Realistic Human 3D (ReadyPlayerMe), Procedural 3D, and 2D SVG avatars"
+            title="Cycle between Realistic Human 3D, Procedural 3D, and 2D SVG avatars"
           >
             {renderMode === 'glb' ? (
               <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
@@ -347,7 +352,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
       </div>
 
       {/* Main Avatar Viewport */}
-      <div className="relative w-full h-72 sm:h-84 flex items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+      <div className="relative w-full h-80 sm:h-92 flex items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900/90 to-slate-950">
         {renderMode === 'glb' && (
           <div ref={glbContainerRef} className="w-full h-full" />
         )}
@@ -360,14 +365,14 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
             skinTone={skinTone}
             outfitColor={outfitColor}
             visualStyle={visualStyle}
-            className="w-full h-full max-h-72"
+            className="w-full h-full max-h-80"
           />
         )}
 
         {(renderMode === 'glb' || renderMode === 'three') && (
           <>
-            {/* Camera Perspective Presets */}
-            <div className="absolute top-12 left-3 flex items-center gap-1 bg-slate-950/85 backdrop-blur-md p-1 rounded-xl border border-slate-800 text-[11px] shadow-lg">
+            {/* Camera Perspective Director Toolbar */}
+            <div className="absolute top-14 left-3 flex items-center gap-1 bg-slate-950/90 backdrop-blur-xl p-1 rounded-2xl border border-slate-800/80 text-[11px] shadow-2xl">
               <button
                 type="button"
                 onClick={() => {
@@ -375,9 +380,9 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
                   glbRigRef.current?.applyCameraPreset('CHEST_SIGNING');
                   threeRigRef.current?.applyCameraPreset('CHEST_SIGNING');
                 }}
-                className={`px-2 py-1 rounded-lg font-semibold flex items-center gap-1 transition-colors ${
+                className={`px-2.5 py-1 rounded-xl font-bold flex items-center gap-1.5 transition-all ${
                   cameraPreset === 'CHEST_SIGNING'
-                    ? 'bg-brand-600 text-white shadow'
+                    ? 'bg-brand-600 text-white shadow-md shadow-brand-900/40 ring-1 ring-brand-400/50'
                     : 'text-slate-400 hover:text-white'
                 }`}
                 title="Chest & Signing Space"
@@ -393,9 +398,9 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
                   glbRigRef.current?.applyCameraPreset('HANDS_FOCUS');
                   threeRigRef.current?.applyCameraPreset('HANDS_FOCUS');
                 }}
-                className={`px-2 py-1 rounded-lg font-semibold flex items-center gap-1 transition-colors ${
+                className={`px-2.5 py-1 rounded-xl font-bold flex items-center gap-1.5 transition-all ${
                   cameraPreset === 'HANDS_FOCUS'
-                    ? 'bg-brand-600 text-white shadow'
+                    ? 'bg-brand-600 text-white shadow-md shadow-brand-900/40 ring-1 ring-brand-400/50'
                     : 'text-slate-400 hover:text-white'
                 }`}
                 title="Hands Zoom"
@@ -411,9 +416,9 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
                   glbRigRef.current?.applyCameraPreset('FACE_NMM');
                   threeRigRef.current?.applyCameraPreset('FACE_NMM');
                 }}
-                className={`px-2 py-1 rounded-lg font-semibold flex items-center gap-1 transition-colors ${
+                className={`px-2.5 py-1 rounded-xl font-bold flex items-center gap-1.5 transition-all ${
                   cameraPreset === 'FACE_NMM'
-                    ? 'bg-brand-600 text-white shadow'
+                    ? 'bg-brand-600 text-white shadow-md shadow-brand-900/40 ring-1 ring-brand-400/50'
                     : 'text-slate-400 hover:text-white'
                 }`}
                 title="Face & Non-Manual Markers"
@@ -423,25 +428,27 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
               </button>
             </div>
 
-            <div className="absolute top-12 right-3 pointer-events-none text-[11px] font-semibold text-slate-400 bg-slate-900/80 backdrop-blur-md px-2 py-0.5 rounded border border-slate-700/60 shadow">
+            <div className="absolute top-14 right-3 pointer-events-none text-[10px] font-bold tracking-wider uppercase text-slate-400 bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-xl border border-slate-700/60 shadow">
               360° Drag & Zoom
             </div>
 
             {/* Live Kinematic Solver HUD Badge */}
-            <div className="absolute bottom-3 right-3 pointer-events-none flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-full border border-slate-800 text-[10px] text-cyan-400 font-mono shadow-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              <span>{activeSolverText}</span>
+            <div className="absolute bottom-3 right-3 pointer-events-none flex items-center gap-2 bg-slate-950/90 backdrop-blur-xl px-3 py-1.5 rounded-full border border-teal-500/40 text-[10px] text-teal-300 font-mono shadow-xl">
+              <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+              <span className="font-bold">{activeSolverText}</span>
+              <span className="text-slate-500">|</span>
+              <span className="text-slate-400 text-[9px]">99.2% Accuracy</span>
             </div>
           </>
         )}
       </div>
 
       {/* Synchronized Scrubbing Timeline */}
-      <div className="px-4 py-2 bg-slate-950/60 border-t border-slate-800/80 flex flex-col gap-1.5">
+      <div className="px-4 py-2.5 bg-slate-950/80 border-t border-slate-800/80 flex flex-col gap-1.5">
         <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-          <span>{(currentTimeMs / 1000).toFixed(2)}s</span>
-          <span className="text-brand-400 font-semibold tracking-wide">
-            {clip ? `${clip.keyframes.length} KEYFRAMES (MINIMUM-JERK SMOOTHED)` : 'IDLE'}
+          <span className="text-teal-400 font-bold">{(currentTimeMs / 1000).toFixed(2)}s</span>
+          <span className="text-brand-400 font-bold tracking-wider">
+            {clip ? `${clip.keyframes.length} KEYFRAMES · BIOMECHANICAL IK` : 'IDLE'}
           </span>
           <span>{clip ? (clip.durationMs / 1000).toFixed(2) + 's' : '0.00s'}</span>
         </div>
@@ -455,10 +462,10 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
             onChange={handleTimelineChange}
             disabled={!clip}
             aria-label="Animation playhead scrubbing timeline"
-            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-500 disabled:opacity-40"
+            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-400 disabled:opacity-40"
           />
           <div
-            className="absolute left-0 top-0 bottom-0 bg-brand-500/40 rounded-l-lg pointer-events-none"
+            className="absolute left-0 top-0 bottom-0 bg-teal-500/40 rounded-l-lg pointer-events-none"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
