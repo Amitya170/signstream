@@ -72,6 +72,34 @@ export const DOMAIN_PACKS: DomainCategory[] = [
     ]
   },
   {
+    id: 'education',
+    name: 'Education & Learning',
+    nameHi: 'शिक्षा और सीखना',
+    description: 'School, study, reading, writing, and classroom communication.',
+    icon: 'BookOpen',
+    phrases: [
+      { text: 'I want to go to school', textHi: 'मैं स्कूल जाना चाहता हूँ', gloss: 'SCHOOL', category: 'education' },
+      { text: 'Teacher is reading a book', textHi: 'अध्यापक किताब पढ़ रहे हैं', gloss: 'TEACHER', category: 'education' },
+      { text: 'Student writes on paper', textHi: 'छात्र लिख रहा है', gloss: 'WRITE', category: 'education' },
+      { text: 'I love to learn new signs', textHi: 'मुझे नए संकेत सीखना पसंद है', gloss: 'LEARN', category: 'education' },
+      { text: 'Please read this book', textHi: 'कृपया यह किताब पढ़ें', gloss: 'BOOK', category: 'education' }
+    ]
+  },
+  {
+    id: 'technology',
+    name: 'Technology & Web',
+    nameHi: 'प्रौद्योगिकी और इंटरनेट',
+    description: 'Modern digital communication, computers, internet, and phones.',
+    icon: 'Laptop',
+    phrases: [
+      { text: 'I work on computer', textHi: 'मैं कंप्यूटर पर काम करता हूँ', gloss: 'COMPUTER', category: 'technology' },
+      { text: 'Connect to internet wifi', textHi: 'इंटरनेट से जुड़ें', gloss: 'INTERNET', category: 'technology' },
+      { text: 'Please call on phone', textHi: 'कृपया फ़ोन पर कॉल करें', gloss: 'PHONE', category: 'technology' },
+      { text: 'Send an email message', textHi: 'ईमेल संदेश भेजें', gloss: 'EMAIL', category: 'technology' },
+      { text: 'Open the website video', textHi: 'वेबसाइट वीडियो खोलें', gloss: 'WEBSITE', category: 'technology' }
+    ]
+  },
+  {
     id: 'emergency',
     name: 'Emergency & Safety (SOS)',
     nameHi: 'आपातकालीन और सुरक्षा (SOS)',

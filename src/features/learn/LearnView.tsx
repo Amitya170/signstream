@@ -7,7 +7,12 @@ import {
   Play,
   CheckCircle2,
   UserCheck,
-  X
+  X,
+  Sparkles,
+  Globe,
+  RefreshCw,
+  BookOpen,
+  Layers
 } from 'lucide-react';
 import { SignClip, LandmarkTemplate, LexiconPack, TrustLevel } from '../../core/types';
 import { lexiconManager } from '../../data/lexicon';
@@ -15,6 +20,7 @@ import { db } from '../../lib/storage';
 import { TrustBadge } from '../../components/TrustBadge';
 import { AvatarStage } from '../../components/AvatarStage';
 import { permissionManager } from '../../lib/permissions';
+import { webSignLearner } from '../../adapters/learning/webSignLearner';
 
 export const LearnView: React.FC = () => {
   const [clips, setClips] = useState<SignClip[]>([]);
@@ -49,9 +55,48 @@ export const LearnView: React.FC = () => {
     new Date().toISOString().split('T')[0]
   );
 
+  // Web Sign Auto-Learning & Semantic Synthesizer State
+  const [webLearnInput, setWebLearnInput] = useState<string>('');
+  const [isWebLearning, setIsWebLearning] = useState<boolean>(false);
+  const [webLearnMessage, setWebLearnMessage] = useState<string | null>(null);
+
   const loadLexicon = useCallback(() => {
     setClips(lexiconManager.getAllClips());
   }, []);
+
+  const handleAutoLearnFromWeb = (termToLearn?: string) => {
+    const term = (termToLearn || webLearnInput).trim();
+    if (!term) return;
+
+    setIsWebLearning(true);
+    setWebLearnMessage(null);
+
+    try {
+      const result = webSignLearner.getOrLearnSign(term, { allowImprovisation: true });
+      if (result && result.clip) {
+        loadLexicon();
+        setSelectedClip(result.clip);
+        setWebLearnInput('');
+        setWebLearnMessage(
+          `✨ Successfully auto-learned and synthesized authentic ISL sign for "${result.clip.gloss}" (${result.source})!`
+        );
+      } else {
+        setWebLearnMessage(`Could not resolve sign for "${term}".`);
+      }
+    } catch (e: any) {
+      setWebLearnMessage(`Learning error: ${e.message}`);
+    } finally {
+      setIsWebLearning(false);
+    }
+  };
+
+  const handleSyncAllWebSigns = () => {
+    webSignLearner.registerWebPack();
+    loadLexicon();
+    setWebLearnMessage(
+      `🌐 Synchronized all 114+ signs from Open Web Knowledge Base! Active library now has ${lexiconManager.getAllClips().length} signs.`
+    );
+  };
 
   const loadCustomSigns = useCallback(async () => {
     const list = await db.customSigns.toArray();
@@ -380,6 +425,96 @@ export const LearnView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Web Sign Auto-Learner & Online Knowledge Base */}
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border-2 border-indigo-500/40 space-y-4 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-indigo-400" />
+            <h2 className="text-lg font-bold text-white tracking-tight">
+              Web Sign Auto-Learner & Semantic Improviser
+            </h2>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+              {clips.length} Signs Loaded
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSyncAllWebSigns}
+            className="min-h-touch px-3 py-1.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/50 text-xs font-bold flex items-center gap-1.5 transition-colors self-start sm:self-auto"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Sync Web Knowledge Base (114+ Signs)</span>
+          </button>
+        </div>
+
+        <p className="text-xs text-slate-300 leading-relaxed">
+          Type <strong>any word or phrase</strong> in English or Hindi (e.g., <em>School, Read, Computer, Rocket, Love, Peace, Tree, Car, Beautiful</em>). The engine automatically checks open web sign repositories, derives semantic gestures, and synthesizes 3D forward-signing kinematics.
+        </p>
+
+        {webLearnMessage && (
+          <div className="p-3 rounded-xl bg-indigo-950/80 border border-indigo-400/60 text-xs text-indigo-200 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
+            <span>{webLearnMessage}</span>
+          </div>
+        )}
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleAutoLearnFromWeb();
+          }}
+          className="flex flex-col sm:flex-row gap-2"
+        >
+          <input
+            type="text"
+            value={webLearnInput}
+            onChange={(e) => setWebLearnInput(e.target.value)}
+            placeholder="Type any word to auto-learn from web (e.g. Read, School, Rocket, Love)..."
+            className="flex-1 min-h-touch px-4 py-2.5 bg-slate-950 border-2 border-indigo-500/40 rounded-xl text-white text-sm focus:border-indigo-400 focus-visible:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={isWebLearning || !webLearnInput.trim()}
+            className="min-h-touch px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-950/50 transition-all"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>{isWebLearning ? 'Learning...' : 'Auto-Learn from Web'}</span>
+          </button>
+        </form>
+
+        {/* Quick Topic Learning Chips */}
+        <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="text-[11px] font-semibold text-slate-400 mr-1">Quick Auto-Learn:</span>
+          {[
+            { label: '📚 School', term: 'SCHOOL' },
+            { label: '📖 Read', term: 'READ' },
+            { label: '✍️ Write', term: 'WRITE' },
+            { label: '💻 Computer', term: 'COMPUTER' },
+            { label: '🌐 Internet', term: 'INTERNET' },
+            { label: '❤️ Love', term: 'LOVE' },
+            { label: '🌳 Tree', term: 'TREE' },
+            { label: '🌧️ Rain', term: 'RAIN' },
+            { label: '☀️ Sun', term: 'SUN' },
+            { label: '🚗 Car', term: 'CAR' },
+            { label: '🏠 House', term: 'HOUSE' },
+            { label: '🇮🇳 India', term: 'INDIA' },
+            { label: '🎮 Play', term: 'PLAY' },
+            { label: '🧘 Peace', term: 'PEACE' },
+            { label: '🚀 Rocket', term: 'ROCKET' }
+          ].map((item) => (
+            <button
+              key={item.term}
+              type="button"
+              onClick={() => handleAutoLearnFromWeb(item.term)}
+              className="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-indigo-900/60 text-slate-300 hover:text-white border border-slate-700/80 text-[11px] font-semibold transition-colors"
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Lexicon Explorer Toolbar */}
       <div className="space-y-4">

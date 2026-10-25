@@ -9,6 +9,7 @@
 import { SignClip, SignKeyframe, TrustLevel } from '../../core/types';
 import { lexiconManager } from '../../data/lexicon';
 import { parseAndReorderISL, ISLGrammarAnalysis } from './islGrammarEngine';
+import { webSignLearner } from '../learning/webSignLearner';
 
 export interface SentenceSignWord {
   id: string;
@@ -388,26 +389,38 @@ export class LiveSentenceSigner {
         }
       }
 
-      // B. Check single lexical sign
+      // B. Check single lexical sign from Lexicon OR Web Sign Knowledge Base & Semantic Improviser
       const single = tokens[i];
-      const singleGloss = PHRASE_GLOSS_DICT[single];
+      let clip: SignClip | undefined;
+      let singleGloss = PHRASE_GLOSS_DICT[single];
+
       if (singleGloss) {
-        const clip = lexiconManager.findClipByGloss(singleGloss);
-        if (clip) {
-          words.push({
-            id: `word-${words.length}-${Date.now()}`,
-            originalWord: single,
-            islGloss: singleGloss,
-            startTimeMs: currentTimelineMs,
-            durationMs: clip.durationMs,
-            isFingerspelled: false,
-            trustLevel: clip.trustLevel,
-            clip
-          });
-          currentTimelineMs += clip.durationMs + transitionGapMs;
-          i += 1;
-          continue;
+        clip = lexiconManager.findClipByGloss(singleGloss);
+      }
+
+      // If not yet matched, query Web Sign Learner & Semantic AI Improviser
+      if (!clip) {
+        const learned = webSignLearner.getOrLearnSign(single);
+        if (learned && learned.clip) {
+          clip = learned.clip;
+          singleGloss = clip.gloss;
         }
+      }
+
+      if (clip) {
+        words.push({
+          id: `word-${words.length}-${Date.now()}`,
+          originalWord: single,
+          islGloss: singleGloss || clip.gloss,
+          startTimeMs: currentTimelineMs,
+          durationMs: clip.durationMs,
+          isFingerspelled: false,
+          trustLevel: clip.trustLevel,
+          clip
+        });
+        currentTimelineMs += clip.durationMs + transitionGapMs;
+        i += 1;
+        continue;
       }
 
       // C. Authentic ISL Two-Handed Manual Fingerspelling for unseen terms / proper nouns

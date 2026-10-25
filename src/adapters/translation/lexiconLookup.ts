@@ -2,6 +2,7 @@ import { SignClip, TranslationCoverage, SignKeyframe } from '../../core/types';
 import { lexiconManager } from '../../data/lexicon';
 import { IslTranslatorAdapter } from './IslTranslatorAdapter';
 import { parseAndReorderISL, ISLGrammarAnalysis } from './islGrammarEngine';
+import { webSignLearner } from '../learning/webSignLearner';
 
 // Normalized lookup dictionary mapping spoken/written phrases to official ISL glosses
 const PHRASE_TO_GLOSS_MAP: Record<string, string> = {
@@ -372,16 +373,25 @@ export class LexiconLookupTranslator implements IslTranslatorAdapter {
         }
       }
 
-      // Check single word
+      // Check single word via Lexicon OR Web Sign Knowledge Base & Semantic Improviser
       const word = tokens[i];
+      let clip: SignClip | undefined;
       const singleGloss = PHRASE_TO_GLOSS_MAP[word];
       if (singleGloss) {
-        const clip = lexiconManager.findClipByGloss(singleGloss);
-        if (clip) {
-          matchedClips.push(clip);
-          i += 1;
-          continue;
+        clip = lexiconManager.findClipByGloss(singleGloss);
+      }
+
+      if (!clip) {
+        const learned = webSignLearner.getOrLearnSign(word);
+        if (learned && learned.clip) {
+          clip = learned.clip;
         }
+      }
+
+      if (clip) {
+        matchedClips.push(clip);
+        i += 1;
+        continue;
       }
 
       // 3. Fallback: Authentic ISL Two-Handed Fingerspelling

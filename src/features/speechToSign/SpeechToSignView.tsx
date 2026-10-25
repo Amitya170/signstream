@@ -15,7 +15,9 @@ import {
   Train,
   AlertOctagon,
   Activity,
-  Users
+  Users,
+  BookOpen,
+  Laptop
 } from 'lucide-react';
 import { SignClip, TranslationCoverage } from '../../core/types';
 import { lexiconTranslator } from '../../adapters/translation/lexiconLookup';
@@ -229,6 +231,10 @@ export const SpeechToSignView: React.FC = () => {
         return <Train className="w-3.5 h-3.5" />;
       case 'family':
         return <Users className="w-3.5 h-3.5" />;
+      case 'education':
+        return <BookOpen className="w-3.5 h-3.5" />;
+      case 'technology':
+        return <Laptop className="w-3.5 h-3.5" />;
       case 'emergency':
         return <AlertOctagon className="w-3.5 h-3.5" />;
       default:
@@ -327,11 +333,15 @@ export const SpeechToSignView: React.FC = () => {
                 >
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-bold capitalize">{word.originalWord}</span>
-                    {word.isFingerspelled && (
+                    {word.isFingerspelled ? (
                       <span className="text-[9px] px-1 py-0.2 rounded font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
                         A-Z
                       </span>
-                    )}
+                    ) : word.clip.provenance.source?.includes('Web') || word.clip.provenance.source?.includes('Improviser') ? (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded font-mono bg-indigo-500/25 text-indigo-300 border border-indigo-500/40" title="Auto-Learned via Web / Semantic Improviser">
+                        ✨ Web Learned
+                      </span>
+                    ) : null}
                   </div>
                   <div className="text-[10px] font-mono text-teal-400/80 truncate max-w-[130px]">
                     {word.islGloss}
