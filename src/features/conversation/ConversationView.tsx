@@ -22,7 +22,7 @@ import { TrustBadge } from '../../components/TrustBadge';
 import { browserSpeechSynthesis } from '../../adapters/tts/browserSpeechSynthesis';
 import { getSttAdapter } from '../../adapters/stt/sttFactory';
 import { lexiconManager } from '../../data/lexicon';
-import { liveSentenceSigner } from '../../adapters/translation/liveSentenceSigner';
+import { liveSentenceSigner, LiveSentencePackage } from '../../adapters/translation/liveSentenceSigner';
 import { AvatarStage } from '../../components/AvatarStage';
 import { EmergencySOSModal } from './EmergencySOSModal';
 import { DOMAIN_PACKS } from '../../data/lexicon/domainPacks';
@@ -40,8 +40,12 @@ export const ConversationView: React.FC = () => {
   const [fullScreenText, setFullScreenText] = useState<string | null>(null);
   const [isRotated180, setIsRotated180] = useState<boolean>(false);
 
-  // Sign preview modal
+  // Sign preview modal with Conversational Teleprompter & Extended Pacing
   const [previewClip, setPreviewClip] = useState<SignClip | null>(null);
+  const [previewSentencePackage, setPreviewSentencePackage] = useState<LiveSentencePackage | null>(null);
+  const [previewActiveWordId, setPreviewActiveWordId] = useState<string | null>(null);
+  const [previewMessageText, setPreviewMessageText] = useState<string>('');
+  const [previewSeekTimeMs, setPreviewSeekTimeMs] = useState<number | null>(null);
 
   // Commercial Tools: 1-Tap SOS Beacon & Domain Packs
   const [isSosOpen, setIsSosOpen] = useState<boolean>(false);
@@ -161,16 +165,26 @@ export const ConversationView: React.FC = () => {
   };
 
   const handleShowSign = (msg: Message) => {
-    const gloss = msg.glossMatch || msg.text;
-    const clip = lexiconManager.findClipByGloss(gloss);
-    if (clip) {
-      setPreviewClip(clip);
-      return;
+    setPreviewMessageText(msg.text);
+    // Always compile complete conversational sentence with extended communicative pacing
+    const pkg = liveSentenceSigner.compileSentence(msg.text, { pacing: 'conversational' });
+    setPreviewSentencePackage(pkg);
+    setPreviewClip(pkg.compositeClip);
+    setPreviewActiveWordId(pkg.words[0]?.id || null);
+    setPreviewSeekTimeMs(null);
+  };
+
+  const handlePreviewTimeUpdate = (timeMs: number) => {
+    if (!previewSentencePackage) return;
+    const active = liveSentenceSigner.getActiveWordAtTime(previewSentencePackage, timeMs);
+    if (active && active.id !== previewActiveWordId) {
+      setPreviewActiveWordId(active.id);
     }
-    const pkg = liveSentenceSigner.compileSentence(msg.text);
-    if (pkg.compositeClip) {
-      setPreviewClip(pkg.compositeClip);
-    }
+  };
+
+  const handleWordChipClick = (word: any) => {
+    setPreviewSeekTimeMs(word.startTimeMs);
+    setPreviewActiveWordId(word.id);
   };
 
   const sourceLabels: Record<MessageSource, { label: string; badgeClass: string }> = {
@@ -541,34 +555,106 @@ export const ConversationView: React.FC = () => {
         </div>
       )}
 
-      {/* Sign Clip Modal Preview */}
+      {/* Extended Conversational Sign Clip Modal Preview with Teleprompter */}
       {previewClip && (
         <div
           role="dialog"
           aria-modal="true"
           aria-label="ISL Sign Keyframe Preview"
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm p-4 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md p-3 sm:p-4 flex items-center justify-center overflow-y-auto"
         >
-          <div className="w-full max-w-lg bg-slate-900 border-2 border-brand-500 rounded-2xl p-5 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-white text-lg">{previewClip.gloss}</span>
-                <TrustBadge level={previewClip.trustLevel} provenance={previewClip.provenance} />
+          <div className="w-full max-w-2xl bg-slate-950/95 border-2 border-teal-500/40 rounded-3xl p-4 sm:p-6 space-y-4 shadow-[0_0_50px_rgba(13,148,136,0.25)] animate-fade-in my-auto">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-800">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-black text-white text-base sm:text-lg tracking-tight">
+                    {previewSentencePackage?.islGrammarSyntax || previewClip.gloss}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-500/15 text-teal-300 border border-teal-500/40">
+                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                    {(previewClip.durationMs / 1000).toFixed(1)}s Conversational Duration
+                  </span>
+                  <TrustBadge level={previewClip.trustLevel} provenance={previewClip.provenance} />
+                </div>
+                {previewMessageText && (
+                  <p className="text-xs sm:text-sm text-slate-300 italic font-medium">
+                    "{previewMessageText}"
+                  </p>
+                )}
               </div>
+
               <button
                 type="button"
-                onClick={() => setPreviewClip(null)}
-                className="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white"
+                onClick={() => {
+                  setPreviewClip(null);
+                  setPreviewSentencePackage(null);
+                  setPreviewActiveWordId(null);
+                }}
+                className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition-colors border border-slate-700 shrink-0"
               >
-                Close
+                Close (ESC)
               </button>
             </div>
 
-            <AvatarStage clip={previewClip} />
+            {/* Avatar Stage with Real-Time Scrubbing & Extended Pacing */}
+            <AvatarStage
+              clip={previewClip}
+              showCaption={true}
+              onTimeUpdate={handlePreviewTimeUpdate}
+              seekTimeMs={previewSeekTimeMs}
+              className="w-full shadow-2xl rounded-2xl overflow-hidden border border-slate-800/80 bg-slate-950"
+            />
 
-            <div className="text-xs text-slate-400 flex items-center justify-between">
+            {/* Synchronized Word Teleprompter Strip in Modal */}
+            {previewSentencePackage && previewSentencePackage.words.length > 0 && (
+              <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping" />
+                    Live Sentence Teleprompter
+                  </span>
+                  <span className="text-slate-400 font-mono text-[10px]">
+                    {previewSentencePackage.words.length} signs · Tap any word to seek
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2 items-center">
+                  {previewSentencePackage.words.map((word) => {
+                    const isActive = previewActiveWordId === word.id;
+                    return (
+                      <button
+                        key={word.id}
+                        type="button"
+                        onClick={() => handleWordChipClick(word)}
+                        aria-label={`Jump avatar to: ${word.originalWord}`}
+                        className={`px-3 py-1.5 rounded-xl text-left transition-all border ${
+                          isActive
+                            ? 'bg-teal-500/20 border-teal-400 text-white shadow-lg shadow-teal-950/60 scale-105 ring-1 ring-teal-400'
+                            : 'bg-slate-950/80 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold capitalize">{word.originalWord}</span>
+                          {word.isFingerspelled && (
+                            <span className="text-[9px] px-1 rounded font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              A-Z
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] font-mono text-teal-400/90 truncate max-w-[120px]">
+                          {word.islGloss}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="text-xs text-slate-400 flex items-center justify-between pt-1">
               <span>{previewClip.labels.en} • {previewClip.labels.hi}</span>
-              <span>Source: {previewClip.provenance.source}</span>
+              <span className="text-[11px] text-slate-500">Pacing: Natural Conversational Dialogue</span>
             </div>
           </div>
         </div>

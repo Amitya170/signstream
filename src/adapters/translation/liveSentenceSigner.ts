@@ -339,7 +339,10 @@ export class LiveSentenceSigner {
    * Compiles an arbitrary sentence into a continuous live sign sequence
    * with authentic ISL grammar, co-articulation smoothing, and word time-windows.
    */
-  public compileSentence(sentence: string): LiveSentencePackage {
+  public compileSentence(
+    sentence: string,
+    options?: { pacing?: 'conversational' | 'standard'; speedMultiplier?: number }
+  ): LiveSentencePackage {
     const trimmed = sentence.trim();
     if (!trimmed) {
       const defaultClip = lexiconManager.findClipByGloss('NAMASTE')!;
@@ -548,16 +551,23 @@ export class LiveSentenceSigner {
     }
 
     let finalTimelineMs = 0;
+    const isConversational = options?.pacing === 'conversational';
+    const timeScale = isConversational ? 2.0 : 1.45;
+    const blendGapMs = isConversational ? 460 : 320;
 
     if (words.length <= 1) {
-      // Single Word Playback
+      // Single Word Playback: Extend stroke hold so viewers have ample time to comprehend the sign
       for (const w of words) {
         w.startTimeMs = 0;
-        w.durationMs = w.clip.durationMs;
+        const baseDuration = w.clip.durationMs;
+        const extendedDuration = Math.round(baseDuration * timeScale);
+        w.durationMs = extendedDuration;
+
         for (const kf of w.clip.keyframes) {
+          const ratio = baseDuration > 0 ? kf.timeMs / baseDuration : 0;
           continuousKeyframes.push({
             ...kf,
-            timeMs: kf.timeMs,
+            timeMs: Math.round(ratio * extendedDuration),
             face: {
               mouthState: kf.face?.mouthState || (grammar.isNegated ? 'tight-lips' : 'neutral'),
               browState: browVal !== 0 ? browVal : kf.face?.browState || 0,
@@ -565,13 +575,11 @@ export class LiveSentenceSigner {
             }
           });
         }
-        finalTimelineMs = w.clip.durationMs;
+        finalTimelineMs = extendedDuration;
       }
     } else {
       // Multi-Word Sentence Co-articulation
-      // Arms stay in the active signing space in front of the chest across word boundaries
       let timeline = 0;
-      const blendGapMs = 240;
 
       for (let idx = 0; idx < words.length; idx++) {
         const w = words[idx];
@@ -594,7 +602,7 @@ export class LiveSentenceSigner {
               headRotation: headRot[0] !== 0 || headRot[1] !== 0 ? headRot : restKf.face?.headRotation
             }
           });
-          timeline = activeOrigin;
+          timeline = Math.round(activeOrigin * 0.8);
         }
 
         const wordStart = timeline;
@@ -602,10 +610,10 @@ export class LiveSentenceSigner {
 
         for (let k = 0; k < activeKfs.length; k++) {
           const kf = activeKfs[k];
-          const rel = kf.timeMs - activeOrigin;
+          const rel = (kf.timeMs - activeOrigin) * timeScale;
           continuousKeyframes.push({
             ...kf,
-            timeMs: wordStart + rel,
+            timeMs: Math.round(wordStart + rel),
             face: {
               mouthState: kf.face?.mouthState || (grammar.isNegated ? 'tight-lips' : 'neutral'),
               browState: browVal !== 0 ? browVal : kf.face?.browState || 0,
@@ -614,13 +622,13 @@ export class LiveSentenceSigner {
           });
         }
 
-        const activeDur = (activeKfs[activeKfs.length - 1]?.timeMs ?? activeOrigin) - activeOrigin;
-        timeline = wordStart + activeDur;
-        w.durationMs = (timeline - w.startTimeMs) + (isLast ? 0 : blendGapMs);
+        const activeDur = ((activeKfs[activeKfs.length - 1]?.timeMs ?? activeOrigin) - activeOrigin) * timeScale;
+        timeline = Math.round(wordStart + activeDur);
+        w.durationMs = Math.round((timeline - w.startTimeMs) + (isLast ? 0 : blendGapMs));
 
         if (isLast) {
-          // Only return to rest at the very conclusion of the entire sentence
-          timeline += 450;
+          // Hold peak conversational gesture before smooth rest return
+          timeline += isConversational ? 950 : 600;
           const finalRest = kfs[kfs.length - 1] ?? activeKfs[activeKfs.length - 1];
           continuousKeyframes.push({
             ...finalRest,
