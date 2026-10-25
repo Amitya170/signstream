@@ -118,7 +118,8 @@ export class ThreeAvatarRig {
 
     // 1. Scene & Camera Setup
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(options.backgroundColor);
+    const initialBg = options.backgroundColor || (this.visualStyle === 'CYBER_HOLOGRAM' ? '#090d16' : '#f1f5f9');
+    this.scene.background = new THREE.Color(initialBg);
 
     this.camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
 
@@ -237,7 +238,7 @@ export class ThreeAvatarRig {
     // Studio Stage Floor Pedestal
     const stageGeo = new THREE.CylinderGeometry(0.85, 0.9, 0.04, 32);
     const stageMat = new THREE.MeshStandardMaterial({
-      color: 0x0f172a,
+      color: this.visualStyle === 'CYBER_HOLOGRAM' ? 0x0f172a : 0xe2e8f0,
       roughness: 0.8,
       metalness: 0.2
     });

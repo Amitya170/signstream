@@ -4,14 +4,14 @@
 
 :root {
   --app-font-scale: 1;
-  --bg-primary: #090d16;
-  --bg-surface: #111827;
-  --bg-surface-elevated: #1f2937;
-  --text-primary: #f9fafb;
-  --text-secondary: #9ca3af;
-  --border-color: #374151;
-  --brand-primary: #14b8a6;
-  --brand-focus: #2dd4bf;
+  --bg-primary: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --border-color: #cbd5e1;
+  --brand-primary: #0d9488;
+  --brand-focus: #0f766e;
 }
 
 .theme-light {

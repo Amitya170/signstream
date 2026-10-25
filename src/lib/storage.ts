@@ -10,12 +10,12 @@ import {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   textSize: 1.0,
-  theme: 'dark',
+  theme: 'light',
   reducedMotion: false,
-  avatarMode: 'three',
+  avatarMode: 'glb',
   avatarSkinTone: '#e0ac69',
   avatarOutfitColor: '#0d9488',
-  avatarBackground: '#1e293b',
+  avatarBackground: '#f1f5f9',
   avatarScale: 1.0,
   playbackSpeed: 1.0,
   uiLanguage: 'en',

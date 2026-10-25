@@ -50,7 +50,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
   visualStyle: initialVisualStyle = 'STUDIO_HUMAN',
   skinTone = '#e0ac69',
   outfitColor = '#0d9488',
-  backgroundColor = '#0b0f19',
+  backgroundColor = '#f1f5f9',
   showCaption = true,
   className = '',
   onTimeUpdate,
@@ -74,6 +74,8 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
   const [isMudraOpen, setIsMudraOpen] = useState<boolean>(false);
   const [isExporterOpen, setIsExporterOpen] = useState<boolean>(false);
 
+  const effectiveBgColor = visualStyle === 'CYBER_HOLOGRAM' ? '#090d16' : (backgroundColor === '#0b0f19' || backgroundColor === '#1e293b' || !backgroundColor ? '#f1f5f9' : backgroundColor);
+
   const animFrameRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number | null>(null);
 
@@ -91,7 +93,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
         {
           skinTone,
           outfitColor,
-          backgroundColor,
+          backgroundColor: effectiveBgColor,
           visualStyle
         },
         glbModelId
@@ -115,7 +117,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
       console.warn('GLB Avatar initialization failed; falling back to Three.js procedural avatar.', e);
       setRenderMode('three');
     }
-  }, [renderMode, backgroundColor, glbModelId]);
+  }, [renderMode, effectiveBgColor, glbModelId]);
 
   // 2. Initialize Three.js Procedural Rig (Fallback)
   useEffect(() => {
@@ -125,7 +127,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
       const rig = new ThreeAvatarRig(threeContainerRef.current, {
         skinTone,
         outfitColor,
-        backgroundColor,
+        backgroundColor: effectiveBgColor,
         visualStyle
       });
       threeRigRef.current = rig;
@@ -142,17 +144,17 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
       console.warn('Three.js initialization failed; falling back to 2D SVG avatar.', e);
       setRenderMode('svg');
     }
-  }, [renderMode, backgroundColor]);
+  }, [renderMode, effectiveBgColor]);
 
   // Update rig material options and visual style
   useEffect(() => {
     if (glbRigRef.current) {
-      glbRigRef.current.updateAppearance({ skinTone, outfitColor, backgroundColor, visualStyle });
+      glbRigRef.current.updateAppearance({ skinTone, outfitColor, backgroundColor: effectiveBgColor, visualStyle });
     }
     if (threeRigRef.current) {
-      threeRigRef.current.updateAppearance({ skinTone, outfitColor, backgroundColor, visualStyle });
+      threeRigRef.current.updateAppearance({ skinTone, outfitColor, backgroundColor: effectiveBgColor, visualStyle });
     }
-  }, [skinTone, outfitColor, backgroundColor, visualStyle]);
+  }, [skinTone, outfitColor, effectiveBgColor, visualStyle]);
 
   // Main Animation Loop with Direct Synchronous 60 FPS RAF Execution
   const animate = useCallback((timestamp: number) => {
@@ -276,27 +278,27 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
 
   return (
     <div
-      className={`flex flex-col bg-slate-950 border border-teal-500/30 rounded-3xl overflow-hidden shadow-[0_0_35px_rgba(13,148,136,0.15)] relative ${className}`}
+      className={`flex flex-col bg-white border-2 border-slate-200/90 rounded-3xl overflow-hidden shadow-[0_12px_36px_rgba(0,0,0,0.06)] relative ${className}`}
     >
-      {/* Futuristic Accent Header Line */}
+      {/* Subtle Top Accent Line */}
       <div className="h-[2px] bg-gradient-to-r from-transparent via-teal-400 to-transparent pointer-events-none" />
 
-      {/* 1. TOP STUDIO HEADER BAR (Shifted ABOVE the canvas, redesigned in clean light colour) */}
-      <div className="px-4 py-3 bg-white/95 border-b border-slate-200/90 flex items-center justify-between flex-wrap gap-2 text-slate-800 z-10 shadow-sm">
+      {/* 1. TOP STUDIO HEADER BAR (Shifted ABOVE the canvas, in clean light colour) */}
+      <div className="px-4 py-3 bg-slate-50/90 border-b border-slate-200/90 flex items-center justify-between flex-wrap gap-2 text-slate-800 z-10 shadow-xs">
         {/* Left: Active Sign Gloss Pill */}
         {clip ? (
-          <div className="flex items-center gap-2 bg-slate-100 px-3.5 py-1.5 rounded-full border border-slate-300 shadow-sm">
+          <div className="flex items-center gap-2 bg-white px-3.5 py-1.5 rounded-full border border-slate-300 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-teal-500 animate-ping" />
             <span className="text-xs font-black text-slate-900 tracking-wide">
               {clip.gloss}
             </span>
-            <span className="text-[11px] text-slate-600 font-medium hidden sm:inline">
+            <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
               ({clip.labels.hi} / {clip.labels.en})
             </span>
             <TrustBadge level={clip.trustLevel} provenance={clip.provenance} />
           </div>
         ) : (
-          <div className="bg-slate-100 px-3.5 py-1.5 rounded-full text-xs text-slate-600 border border-slate-300 flex items-center gap-1.5 shadow-sm">
+          <div className="bg-white px-3.5 py-1.5 rounded-full text-xs text-slate-600 border border-slate-200 flex items-center gap-1.5 shadow-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
             <span className="font-semibold">Awaiting Sign Input</span>
           </div>
@@ -306,7 +308,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
         <div className="flex items-center gap-1.5 flex-wrap">
           {/* 3D Model Selection */}
           {renderMode === 'glb' && (
-            <div className="flex items-center bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs shadow-sm">
+            <div className="flex items-center bg-white px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs shadow-sm">
               <label htmlFor="avatar-model-select" className="sr-only">3D Avatar Model</label>
               <select
                 id="avatar-model-select"
@@ -329,7 +331,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
             className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all shadow-sm ${
               visualStyle === 'CYBER_HOLOGRAM'
                 ? 'bg-cyan-100 text-cyan-900 border-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.3)]'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+                : 'bg-white hover:bg-slate-100 text-slate-800 border-slate-300'
             }`}
             aria-label={`Toggle avatar visual style. Current: ${visualStyle === 'CYBER_HOLOGRAM' ? 'Cyber Hologram' : 'Studio Human'}`}
             title="Toggle between Realistic Studio Human and Cyber Hologram digital aesthetics"
@@ -344,8 +346,8 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
             onClick={cycleRenderMode}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all shadow-sm ${
               renderMode === 'glb'
-                ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+                ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                : 'bg-white hover:bg-slate-100 text-slate-800 border-slate-300'
             }`}
             aria-label={`Cycle avatar render mode. Current: ${renderMode === 'glb' ? 'Realistic Human 3D' : renderMode === 'three' ? 'Procedural 3D' : '2D SVG'}`}
             title="Cycle between Realistic Human 3D, Procedural 3D, and 2D SVG avatars"
@@ -361,7 +363,11 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
       </div>
 
       {/* 2. MAIN 3D AVATAR VIEWPORT (100% UNRESTRICTED - ZERO OVERLAYS HIDING THE CHARACTER) */}
-      <div className="relative w-full h-84 sm:h-96 flex items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
+      <div className={`relative w-full h-88 sm:h-[430px] flex items-center justify-center overflow-hidden transition-colors ${
+        visualStyle === 'CYBER_HOLOGRAM'
+          ? 'bg-slate-950'
+          : 'bg-gradient-to-b from-slate-100 via-slate-50 to-slate-200/60'
+      }`}>
         {renderMode === 'glb' && (
           <div ref={glbContainerRef} className="w-full h-full" />
         )}
@@ -379,11 +385,11 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
         )}
       </div>
 
-      {/* 3. DIRECTOR & TOOLS BAR (Shifted BELOW the canvas, redesigned in clean light colour) */}
-      <div className="px-4 py-2.5 bg-slate-50 border-t border-b border-slate-200/90 flex items-center justify-between flex-wrap gap-2 text-slate-800 z-10 shadow-sm">
+      {/* 3. DIRECTOR & TOOLS BAR (Shifted BELOW the canvas, in clean light colour) */}
+      <div className="px-4 py-2.5 bg-slate-50/90 border-t border-b border-slate-200/90 flex items-center justify-between flex-wrap gap-2 text-slate-800 z-10 shadow-xs">
         {/* Left: Camera Perspective Angle Selector */}
         {(renderMode === 'glb' || renderMode === 'three') ? (
-          <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm text-xs">
+          <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-slate-300 shadow-sm text-xs">
             <span className="text-[10px] font-black uppercase text-slate-400 px-1.5 hidden md:inline">Camera:</span>
             <button
               type="button"
@@ -395,7 +401,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
               className={`px-2.5 py-1 rounded-xl font-bold flex items-center gap-1.5 transition-all ${
                 cameraPreset === 'CHEST_SIGNING'
                   ? 'bg-teal-600 text-white shadow-sm ring-1 ring-teal-400'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
               title="Chest & Signing Space"
             >
@@ -413,7 +419,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
               className={`px-2.5 py-1 rounded-xl font-bold flex items-center gap-1.5 transition-all ${
                 cameraPreset === 'HANDS_FOCUS'
                   ? 'bg-teal-600 text-white shadow-sm ring-1 ring-teal-400'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
               title="Hands Zoom"
             >
@@ -431,7 +437,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
               className={`px-2.5 py-1 rounded-xl font-bold flex items-center gap-1.5 transition-all ${
                 cameraPreset === 'FACE_NMM'
                   ? 'bg-teal-600 text-white shadow-sm ring-1 ring-teal-400'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
               title="Face & Non-Manual Markers"
             >
@@ -449,7 +455,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
               className={`px-2.5 py-1 rounded-xl font-bold flex items-center gap-1.5 transition-all ${
                 cameraPreset === 'DIAGONAL_45'
                   ? 'bg-teal-600 text-white shadow-sm ring-1 ring-teal-400'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
               title="45° Profile Perspective"
             >
@@ -466,28 +472,28 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
               <button
                 type="button"
                 onClick={() => setIsMudraOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold border border-teal-300 text-xs shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+                className="px-3.5 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold border border-teal-300 text-xs shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
                 title="Inspect ISL Mudra & Handshape Anatomy"
               >
                 <Info className="w-3.5 h-3.5 text-teal-600" />
-                <span>Mudra</span>
+                <span>Mudra Anatomy</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsExporterOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-800 font-bold border border-cyan-300 text-xs shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+                className="px-3.5 py-1.5 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-800 font-bold border border-cyan-300 text-xs shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
                 title="Export Sign Video Clip or Snapshot"
               >
                 <Share2 className="w-3.5 h-3.5 text-cyan-600" />
-                <span>Export</span>
+                <span>Export Clip</span>
               </button>
             </>
           )}
 
           {/* Solver Status Pill */}
           {(renderMode === 'glb' || renderMode === 'three') && (
-            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 text-[10px] text-teal-700 font-mono shadow-sm">
+            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-300 text-[10px] text-teal-700 font-mono shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
               <span className="font-bold">{activeSolverText}</span>
             </div>
@@ -499,14 +505,14 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
         </div>
       </div>
 
-      {/* Synchronized Scrubbing Timeline */}
-      <div className="px-4 py-2.5 bg-slate-950/80 border-t border-slate-800/80 flex flex-col gap-1.5">
-        <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-          <span className="text-teal-400 font-bold">{(currentTimeMs / 1000).toFixed(2)}s</span>
-          <span className="text-brand-400 font-bold tracking-wider">
+      {/* 4. SYNCHRONIZED SCRUBBING TIMELINE (Light styled) */}
+      <div className="px-5 py-3 bg-white border-b border-slate-200/90 flex flex-col gap-1.5">
+        <div className="flex items-center justify-between text-[11px] font-mono">
+          <span className="text-teal-700 font-bold">{(currentTimeMs / 1000).toFixed(2)}s</span>
+          <span className="text-slate-600 font-bold tracking-wider">
             {clip ? `${clip.keyframes.length} KEYFRAMES · BIOMECHANICAL IK` : 'IDLE'}
           </span>
-          <span>{clip ? (clip.durationMs / 1000).toFixed(2) + 's' : '0.00s'}</span>
+          <span className="text-slate-500">{clip ? (clip.durationMs / 1000).toFixed(2) + 's' : '0.00s'}</span>
         </div>
 
         <div className="relative w-full flex items-center">
@@ -518,7 +524,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
             onChange={handleTimelineChange}
             disabled={!clip}
             aria-label="Animation playhead scrubbing timeline"
-            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-400 disabled:opacity-40"
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-600 disabled:opacity-40"
           />
           <div
             className="absolute left-0 top-0 bottom-0 bg-teal-500/40 rounded-l-lg pointer-events-none"
@@ -531,7 +537,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
               return (
                 <div
                   key={i}
-                  className="absolute top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-teal-300 shadow-[0_0_4px_rgba(45,212,191,0.8)] pointer-events-none"
+                  className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-teal-600 ring-2 ring-white shadow-sm pointer-events-none"
                   style={{ left: `${leftPct}%` }}
                   title={`Keyframe ${i + 1}: ${kf.timeMs}ms`}
                 />
@@ -540,15 +546,15 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
         </div>
       </div>
 
-      {/* Animation Playback HUD */}
-      <div className="flex items-center justify-between px-4 py-3 bg-slate-950 border-t border-slate-800/80">
+      {/* 5. ANIMATION PLAYBACK HUD (Light styled) */}
+      <div className="flex items-center justify-between px-5 py-3 bg-slate-50/90 rounded-b-3xl">
         <div className="flex items-center gap-2">
           {/* Play/Pause */}
           <button
             type="button"
             onClick={() => setIsPlaying(!isPlaying)}
             disabled={!clip}
-            className="p-2 bg-brand-600 hover:bg-brand-500 disabled:bg-slate-800 text-white rounded-xl shadow transition-colors focus-visible:ring-2 focus-visible:ring-brand-400"
+            className="p-2.5 bg-teal-600 hover:bg-teal-500 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl shadow-md transition-colors focus-visible:ring-2 focus-visible:ring-teal-400 active:scale-95"
             aria-label={isPlaying ? 'Pause animation' : 'Play animation'}
           >
             {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
@@ -569,7 +575,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
               }
             }}
             disabled={!clip}
-            className="p-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 rounded-xl transition-colors focus-visible:ring-2"
+            className="p-2.5 bg-white hover:bg-slate-100 disabled:opacity-40 text-slate-700 border border-slate-300 rounded-xl shadow-xs transition-colors focus-visible:ring-2 active:scale-95"
             aria-label="Restart animation from beginning"
           >
             <RotateCcw className="w-4 h-4" />
@@ -580,7 +586,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
             type="button"
             onClick={handleStepForward}
             disabled={!clip}
-            className="p-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 rounded-xl transition-colors focus-visible:ring-2"
+            className="p-2.5 bg-white hover:bg-slate-100 disabled:opacity-40 text-slate-700 border border-slate-300 rounded-xl shadow-xs transition-colors focus-visible:ring-2 active:scale-95"
             aria-label="Step forward 120ms"
           >
             <StepForward className="w-4 h-4" />
@@ -595,7 +601,7 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
                 glbRigRef.current?.resetView();
                 threeRigRef.current?.resetView();
               }}
-              className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors focus-visible:ring-2"
+              className="p-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl shadow-xs transition-colors focus-visible:ring-2 active:scale-95"
               aria-label="Reset 3D camera orientation"
               title="Reset 3D View"
             >
@@ -610,10 +616,10 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
           <button
             type="button"
             onClick={() => setIsLooping(!isLooping)}
-            className={`p-2 rounded-xl transition-colors focus-visible:ring-2 ${
+            className={`p-2.5 rounded-xl transition-all shadow-xs focus-visible:ring-2 ${
               isLooping
-                ? 'bg-brand-600/30 text-brand-300 border border-brand-500/40'
-                : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                ? 'bg-teal-100 text-teal-800 border border-teal-300 shadow-sm'
+                : 'bg-white text-slate-500 hover:text-slate-800 border border-slate-300'
             }`}
             aria-label={isLooping ? 'Disable continuous looping' : 'Enable continuous looping'}
             aria-pressed={isLooping}
@@ -622,17 +628,17 @@ export const AvatarStage: React.FC<AvatarStageProps> = ({
           </button>
 
           {/* Speed Presets */}
-          <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 p-1 rounded-xl text-xs">
-            <Gauge className="w-3.5 h-3.5 text-slate-400 ml-1.5 mr-0.5" />
+          <div className="flex items-center gap-1 bg-white border border-slate-300 p-1 rounded-xl text-xs shadow-xs">
+            <Gauge className="w-3.5 h-3.5 text-slate-500 ml-1.5 mr-0.5" />
             {[0.5, 0.75, 1.0].map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setSpeed(s)}
-                className={`px-2 py-0.5 rounded-lg font-mono font-semibold transition-colors ${
+                className={`px-2.5 py-1 rounded-lg font-mono font-bold transition-colors ${
                   speed === s
-                    ? 'bg-brand-600 text-white shadow'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-teal-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
                 aria-label={`Playback speed ${s}x`}
               >

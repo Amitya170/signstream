@@ -137,7 +137,8 @@ export class GlbAvatarRig {
 
     // 1. Scene & Camera Setup
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(options.backgroundColor);
+    const initialBg = options.backgroundColor || (this.visualStyle === 'CYBER_HOLOGRAM' ? '#090d16' : '#f1f5f9');
+    this.scene.background = new THREE.Color(initialBg);
     this.camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 100);
 
     // 2. High-Precision PBR Renderer (with PCFShadowMap)
@@ -155,21 +156,21 @@ export class GlbAvatarRig {
     container.appendChild(this.renderer.domElement);
 
     // 3. Cinematic Studio Three-Point Lighting System
-    this.ambientLight = new THREE.AmbientLight(0xffffff, 1.3);
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
     this.scene.add(this.ambientLight);
 
-    this.keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    this.keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
     this.keyLight.position.set(1.5, 3.2, 2.2);
     this.keyLight.castShadow = true;
     this.keyLight.shadow.mapSize.width = 1024;
     this.keyLight.shadow.mapSize.height = 1024;
     this.scene.add(this.keyLight);
 
-    this.cyanRimLight = new THREE.DirectionalLight(0x38bdf8, 1.0);
+    this.cyanRimLight = new THREE.DirectionalLight(0x38bdf8, 0.8);
     this.cyanRimLight.position.set(-1.8, 2.2, -1.2);
     this.scene.add(this.cyanRimLight);
 
-    this.warmFillLight = new THREE.DirectionalLight(0xfef08a, 0.6);
+    this.warmFillLight = new THREE.DirectionalLight(0xffedd5, 0.7);
     this.warmFillLight.position.set(1.5, 1.2, -1.0);
     this.scene.add(this.warmFillLight);
 
@@ -192,7 +193,7 @@ export class GlbAvatarRig {
     // 4. Stage Pedestal
     const stageGeo = new THREE.CylinderGeometry(0.85, 0.9, 0.04, 32);
     const stageMat = new THREE.MeshStandardMaterial({
-      color: 0x0f172a,
+      color: this.visualStyle === 'CYBER_HOLOGRAM' ? 0x0f172a : 0xe2e8f0,
       roughness: 0.8,
       metalness: 0.2
     });
@@ -396,6 +397,10 @@ export class GlbAvatarRig {
     if (this.scanlineMesh) {
       this.scanlineMesh.visible = isHolo;
     }
+    if (this.stageMesh) {
+      (this.stageMesh.material as THREE.MeshStandardMaterial).color.set(isHolo ? 0x0f172a : 0xe2e8f0);
+    }
+    this.scene.background = new THREE.Color(isHolo ? 0x090d16 : 0xf1f5f9);
   }
 
   public setVisualStyle(style: VisualStyle): void {

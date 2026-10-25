@@ -146,7 +146,7 @@ export interface AppSettings {
   textSize: number; // 1.0 (100%) to 2.0 (200%)
   theme: AppTheme;
   reducedMotion: boolean;
-  avatarMode: 'three' | 'svg';
+  avatarMode: 'glb' | 'three' | 'svg';
   avatarSkinTone: string;
   avatarOutfitColor: string;
   avatarBackground: string;
