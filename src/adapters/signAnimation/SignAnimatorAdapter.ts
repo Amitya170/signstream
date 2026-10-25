@@ -78,8 +78,10 @@ export function interpolateKeyframes(clip: SignClip, timeMs: number): Interpolat
   // Biomechanical minimum-jerk easing curve for fluid, lifelike movement
   const factor = smootherstep(rawRatio);
 
+  const currentActiveGloss = (factor < 0.5 ? prev.activeGloss : next.activeGloss) || prev.activeGloss || next.activeGloss || clip.gloss;
+
   return {
-    activeGloss: clip.gloss,
+    activeGloss: currentActiveGloss,
     progress: clip.durationMs > 0 ? clampedTime / clip.durationMs : 0,
     timeMs: clampedTime,
     durationMs: clip.durationMs,

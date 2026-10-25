@@ -323,9 +323,10 @@ export class GlbAvatarRig {
     const box = new THREE.Box3().setFromObject(root);
     const size = box.getSize(new THREE.Vector3());
 
-    // Head-relative framing invariant to character height & geometry
-    this.modelCenterY = box.max.y - size.y * 0.22;
-    this.zoomDistance = Math.max(1.35, size.y * 0.82);
+    // Head-to-waist framing invariant to character height & geometry
+    // Lowered modelCenterY and scaled zoom distance fully capture both upper-chest and lower-waist signing spaces
+    this.modelCenterY = box.max.y - size.y * 0.30;
+    this.zoomDistance = Math.max(1.48, size.y * 0.95);
     this.applyCameraPreset('CHEST_SIGNING');
   }
 
@@ -424,16 +425,16 @@ export class GlbAvatarRig {
 
     switch (preset) {
       case 'CHEST_SIGNING':
-        this.camera.position.set(0, cy + 0.05, this.zoomDistance);
-        this.camera.lookAt(0, cy - 0.02, 0);
+        this.camera.position.set(0, cy + 0.04, this.zoomDistance);
+        this.camera.lookAt(0, cy - 0.04, 0);
         break;
       case 'HANDS_FOCUS':
-        this.camera.position.set(0, cy - 0.12, this.zoomDistance * 0.72);
-        this.camera.lookAt(0, cy - 0.15, 0);
+        this.camera.position.set(0, cy - 0.14, this.zoomDistance * 0.72);
+        this.camera.lookAt(0, cy - 0.16, 0);
         break;
       case 'FACE_NMM':
         this.camera.position.set(0, cy + 0.28, this.zoomDistance * 0.55);
-        this.camera.lookAt(0, cy + 0.25, 0);
+        this.camera.lookAt(0, cy + 0.24, 0);
         break;
       case 'FREE_ORBIT':
         break;
@@ -562,14 +563,14 @@ export class GlbAvatarRig {
       this.bones.rightShoulder.position.y = Math.max(0, pitchR - 0.2) * 0.02 + breath * 0.003;
     }
 
-    // Default resting positions
-    const restR_Arm: [number, number, number] = [0.08, -0.04, -1.42];
-    const restR_Fore: [number, number, number] = [0.0, -0.1, -0.2];
-    const restR_Hand: [number, number, number] = [0.05, -0.05, 0.0];
+    // Default anatomical resting positions: natural drape beside hips with passive carrying angle
+    const restR_Arm: [number, number, number] = [0.02, 0.0, -1.46];
+    const restR_Fore: [number, number, number] = [0.0, 0.02, -0.05];
+    const restR_Hand: [number, number, number] = [0.0, 0.0, 0.0];
 
-    const restL_Arm: [number, number, number] = [0.08, 0.04, 1.42];
-    const restL_Fore: [number, number, number] = [0.0, 0.1, 0.2];
-    const restL_Hand: [number, number, number] = [0.05, 0.05, 0.0];
+    const restL_Arm: [number, number, number] = [0.02, 0.0, 1.46];
+    const restL_Fore: [number, number, number] = [0.0, -0.02, 0.05];
+    const restL_Hand: [number, number, number] = [0.0, 0.0, 0.0];
 
     // 3. Dedicated Authentic ISLRTC Sign Solvers
     if (gloss === 'NAMASTE') {
@@ -602,22 +603,33 @@ export class GlbAvatarRig {
       overrideCurlL = [0, 0, 0, 0, 0];
       overrideCurlR = [0, 0, 0, 0, 0];
     } else if (gloss === 'HELP') {
-      // Authentic Help Sign: Right fist resting on flat upward-facing left palm
+      // Authentic ISLRTC Help:
+      // Non-dominant (left) flat hand palm up at chest; dominant (right) closed fist resting on left palm and lifting slightly together.
+      const lArmTarget: [number, number, number] = [0.42, 0.08, 0.88];
+      const lForeTarget: [number, number, number] = [-0.10, 0.45, 1.25];
+      const lHandTarget: [number, number, number] = [-0.40, 0.50, 0.35];
+
+      const rArmTarget: [number, number, number] = [0.46, -0.08, -0.92];
+      const rForeTarget: [number, number, number] = [-0.15, -0.35, -1.35];
+      const rHandTarget: [number, number, number] = [-0.25, -0.15, -0.15];
+
+      const lift = Math.sin(progress * Math.PI) * 0.04;
+
       if (this.bones.leftArm && this.bones.leftForeArm && this.bones.leftHand) {
-        this.bones.leftArm.rotation.set(0.48, 0.15, 1.15);
-        this.bones.leftForeArm.rotation.set(-0.15, 0.6, 1.45);
-        this.bones.leftHand.rotation.set(-0.5, 0.6, 0.4);
+        this.bones.leftArm.rotation.set(lArmTarget[0] + lift, lArmTarget[1], lArmTarget[2]);
+        this.bones.leftForeArm.rotation.set(...lForeTarget);
+        this.bones.leftHand.rotation.set(...lHandTarget);
       }
       if (this.bones.rightArm && this.bones.rightForeArm && this.bones.rightHand) {
-        this.bones.rightArm.rotation.set(0.55, -0.15, -1.1);
-        this.bones.rightForeArm.rotation.set(-0.25, -0.55, -1.55);
-        this.bones.rightHand.rotation.set(-0.4, -0.2, -0.2);
+        this.bones.rightArm.rotation.set(rArmTarget[0] + lift, rArmTarget[1], rArmTarget[2]);
+        this.bones.rightForeArm.rotation.set(...rForeTarget);
+        this.bones.rightHand.rotation.set(...rHandTarget);
       }
       if (this.bones.head) {
-        this.bones.head.rotation.set(0.08, 0, 0);
+        this.bones.head.rotation.set(0.06, 0, 0);
       }
       overrideCurlL = [0, 0, 0, 0, 0];
-      overrideCurlR = [0.7, 0.9, 0.9, 0.9, 0.9];
+      overrideCurlR = [0, 0.95, 0.95, 0.95, 0.95];
     } else if (gloss === 'THANK-YOU') {
       // Authentic ISLRTC Thank You:
       // Dominant flat hand touching lower chin, then sweeping smoothly forward/downward in gratitude with polite nod.
@@ -650,17 +662,17 @@ export class GlbAvatarRig {
         this.bones.head.rotation.set(nod, 0, 0);
       }
       overrideCurlR = [0, 0, 0, 0, 0];
-      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+      overrideCurlL = [0.32, 0.38, 0.40, 0.40, 0.36];
     } else if (gloss === 'DOCTOR') {
       // Authentic ISLRTC Doctor:
       // Left arm extended forward at lower chest, palm up. Right index and middle fingers tap twice on inner wrist (pulse).
-      const lArmTarget: [number, number, number] = [0.45, 0.12, 1.15];
-      const lForeTarget: [number, number, number] = [-0.15, 0.65, 1.45];
-      const lHandTarget: [number, number, number] = [-0.30, 0.65, 0.40];
+      const lArmTarget: [number, number, number] = [0.42, 0.08, 0.88];
+      const lForeTarget: [number, number, number] = [-0.10, 0.50, 1.25];
+      const lHandTarget: [number, number, number] = [-0.35, 0.50, 0.35];
 
-      const rArmTarget: [number, number, number] = [0.48, -0.12, -1.12];
-      const rForeTarget: [number, number, number] = [-0.22, -0.55, -1.50];
-      const rHandTarget: [number, number, number] = [-0.20, -0.30, -0.25];
+      const rArmTarget: [number, number, number] = [0.44, -0.08, -0.96];
+      const rForeTarget: [number, number, number] = [-0.18, -0.45, -1.35];
+      const rHandTarget: [number, number, number] = [-0.20, -0.25, -0.20];
 
       const lArm = stageInterp(progress, 0.20, 0.80, restL_Arm, lArmTarget, lArmTarget);
       const lFore = stageInterp(progress, 0.20, 0.80, restL_Fore, lForeTarget, lForeTarget);
@@ -693,12 +705,12 @@ export class GlbAvatarRig {
     } else if (gloss === 'TIME') {
       // Authentic ISLRTC Time:
       // Left arm across chest, back of wrist up. Right index finger taps wristwatch twice.
-      const lArmTarget: [number, number, number] = [0.45, 0.12, 1.15];
-      const lForeTarget: [number, number, number] = [-0.15, 0.15, 1.45];
-      const lHandTarget: [number, number, number] = [0.20, -0.20, 0.10];
+      const lArmTarget: [number, number, number] = [0.42, 0.08, 0.95];
+      const lForeTarget: [number, number, number] = [-0.12, 0.20, 1.35];
+      const lHandTarget: [number, number, number] = [0.15, -0.15, 0.10];
 
-      const rArmTarget: [number, number, number] = [0.48, -0.12, -1.10];
-      const rForeTarget: [number, number, number] = [-0.20, -0.45, -1.50];
+      const rArmTarget: [number, number, number] = [0.46, -0.10, -0.98];
+      const rForeTarget: [number, number, number] = [-0.18, -0.40, -1.35];
       const rHandTarget: [number, number, number] = [-0.20, -0.20, -0.20];
 
       const lArm = stageInterp(progress, 0.20, 0.80, restL_Arm, lArmTarget, lArmTarget);
@@ -727,7 +739,7 @@ export class GlbAvatarRig {
       if (this.bones.head) {
         this.bones.head.rotation.set(0.08, 0, 0);
       }
-      overrideCurlL = [0.3, 0.3, 0.3, 0.3, 0.3];
+      overrideCurlL = [0.32, 0.38, 0.40, 0.40, 0.36];
       overrideCurlR = [0.85, 0, 0.85, 0.85, 0.85];
     } else if (gloss === 'PLEASE') {
       // Authentic ISLRTC Please:
@@ -760,7 +772,7 @@ export class GlbAvatarRig {
         this.bones.head.rotation.set(0.08, 0, 0);
       }
       overrideCurlR = [0, 0, 0, 0, 0];
-      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+      overrideCurlL = [0.32, 0.38, 0.40, 0.40, 0.36];
     } else if (gloss === 'SORRY') {
       // Authentic ISLRTC Sorry:
       // Closed fist rubbing gently over heart/chest with remorseful head bow.
@@ -792,7 +804,7 @@ export class GlbAvatarRig {
         this.bones.head.rotation.set(0.14, 0.06, -0.04);
       }
       overrideCurlR = [1.0, 1.0, 1.0, 1.0, 1.0];
-      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+      overrideCurlL = [0.32, 0.38, 0.40, 0.40, 0.36];
     } else if (gloss === 'WELCOME') {
       // Authentic ISLRTC Welcome:
       // Both open hands, palms facing up/inward toward body, scooping in welcoming gesture.
@@ -860,7 +872,7 @@ export class GlbAvatarRig {
         this.bones.leftHand.rotation.set(...restL_Hand);
       }
       overrideCurlR = [0.85, 0, 0, 0, 0.85];
-      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+      overrideCurlL = [0.32, 0.38, 0.40, 0.40, 0.36];
     } else if (gloss === 'YES') {
       // Closed fist nodding up and down at wrist with head nod
       const chestArm: [number, number, number] = [0.55, -0.10, -1.02];
@@ -887,7 +899,7 @@ export class GlbAvatarRig {
         this.bones.head.rotation.set(Math.max(0, nod * 0.4), 0, 0);
       }
       overrideCurlR = [1.0, 1.0, 1.0, 1.0, 1.0];
-      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+      overrideCurlL = [0.32, 0.38, 0.40, 0.40, 0.36];
     } else if (gloss === 'NO') {
       // Index finger extended wagging left-right with head shake
       const chestArm: [number, number, number] = [0.55, -0.10, -1.02];
@@ -914,7 +926,7 @@ export class GlbAvatarRig {
         this.bones.head.rotation.set(0, -wag * 0.4, 0);
       }
       overrideCurlR = [0.85, 0, 0.85, 0.85, 0.85];
-      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+      overrideCurlL = [0.32, 0.38, 0.40, 0.40, 0.36];
     } else if (gloss === 'I') {
       // Index finger pointing to center of chest
       const chestArm: [number, number, number] = [0.65, -0.05, -0.75];
@@ -936,7 +948,7 @@ export class GlbAvatarRig {
         this.bones.leftHand.rotation.set(...restL_Hand);
       }
       overrideCurlR = [0.85, 0, 0.85, 0.85, 0.85];
-      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+      overrideCurlL = [0.32, 0.38, 0.40, 0.40, 0.36];
     } else if (gloss === 'YOU') {
       // Index finger pointing forward at conversational partner
       const fwdArm: [number, number, number] = [0.55, -0.10, -1.02];
@@ -961,7 +973,7 @@ export class GlbAvatarRig {
         this.bones.head.rotation.set(0.05, 0, 0);
       }
       overrideCurlR = [0.85, 0, 0.85, 0.85, 0.85];
-      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+      overrideCurlL = [0.32, 0.38, 0.40, 0.40, 0.36];
     } else if (gloss === 'WHERE') {
       // Both open hands palms up at lower chest level shrugging side to side
       const lArmTarget: [number, number, number] = [0.45, 0.12, 1.10];
@@ -1025,7 +1037,7 @@ export class GlbAvatarRig {
         this.bones.head.rotation.set(0.08, 0, 0);
       }
       overrideCurlR = [0, 1.0, 1.0, 1.0, 1.0];
-      overrideCurlL = [0.15, 0.15, 0.15, 0.15, 0.15];
+      overrideCurlL = [0.32, 0.38, 0.40, 0.40, 0.36];
     } else {
       // Dynamic Kinematic Spatial Solving for all other dictionary words and sentences:
       if (this.bones.head) {
@@ -1131,10 +1143,10 @@ export class GlbAvatarRig {
       }
     }
 
-    // 6. Biological Multi-Phalanx Flexion & Finger Spread
+    // 6. Biological Multi-Phalanx Flexion, Anti-Starfish Finger Convergence & Thumb Adduction
     const spreadR = (pose.rightHand.spread ?? 0.05);
     const spreadL = (pose.leftHand.spread ?? 0.05);
-    const phalanxFlex = [1.35, 1.55, 1.15, 0.6];
+    const phalanxFlex = [1.25, 1.45, 1.10, 0.60];
 
     for (let f = 0; f < 5; f++) {
       const curlL = overrideCurlL ? (overrideCurlL[f] ?? 0) : (pose.leftHand.curl[f] ?? 0);
@@ -1143,12 +1155,34 @@ export class GlbAvatarRig {
         for (let p = 0; p < leftChain.length; p++) {
           const b = leftChain[p];
           if (f === 0) {
-            b.rotation.x = -curlL * 0.5 * (p === 0 ? 1.0 : 0.7);
-            b.rotation.z = curlL * 0.7 * (p === 0 ? 1.0 : 0.8);
+            // Biomechanically calibrated thumb adduction & flexion (Pataka vs Fist vs Resting)
+            if (curlL < 0.25) {
+              // Flat Pataka Handshape: Thumb adducts flush along radial index border
+              b.rotation.x = -0.35 * (p === 0 ? 1.0 : 0.6);
+              b.rotation.y = -0.45 * (p === 0 ? 1.0 : 0.4);
+              b.rotation.z = 0.40 * (p === 0 ? 1.0 : 0.6);
+            } else if (curlL > 0.70) {
+              // Closed S-Fist: Thumb wraps across folded fingers
+              b.rotation.x = -0.55 * (p === 0 ? 1.0 : 0.7);
+              b.rotation.y = 0.15 * (p === 0 ? 1.0 : 0.5);
+              b.rotation.z = 0.75 * (p === 0 ? 1.0 : 0.7);
+            } else {
+              // Relaxed Resting Thumb (natural drape)
+              const t = (curlL - 0.25) / 0.45;
+              b.rotation.x = (-0.35 + (-0.55 - -0.35) * t) * (p === 0 ? 1.0 : 0.6);
+              b.rotation.y = (-0.45 + (0.15 - -0.45) * t) * (p === 0 ? 1.0 : 0.4);
+              b.rotation.z = (0.40 + (0.75 - 0.40) * t) * (p === 0 ? 1.0 : 0.6);
+            }
           } else {
             const flex = (phalanxFlex[p] ?? 1.1) * curlL;
+            b.rotation.x = 0;
             b.rotation.z = flex;
-            b.rotation.y = (f - 2) * spreadL * 0.2 * (p === 0 ? 1 : 0.3);
+            // Anti-starfish finger convergence when flat; spread only when explicitly commanded
+            if (spreadL > 0.1) {
+              b.rotation.y = (f - 2) * spreadL * 0.25 * (p === 0 ? 1.0 : 0.3);
+            } else {
+              b.rotation.y = (f - 2) * 0.07 * (1.0 - Math.min(1.0, curlL * 1.2)) * (p === 0 ? 1.0 : 0.4);
+            }
           }
         }
       }
@@ -1159,12 +1193,34 @@ export class GlbAvatarRig {
         for (let p = 0; p < rightChain.length; p++) {
           const b = rightChain[p];
           if (f === 0) {
-            b.rotation.x = -curlR * 0.5 * (p === 0 ? 1.0 : 0.7);
-            b.rotation.z = -curlR * 0.7 * (p === 0 ? 1.0 : 0.8);
+            // Biomechanically calibrated thumb adduction & flexion (Pataka vs Fist vs Resting)
+            if (curlR < 0.25) {
+              // Flat Pataka Handshape: Thumb adducts flush along radial index border
+              b.rotation.x = -0.35 * (p === 0 ? 1.0 : 0.6);
+              b.rotation.y = 0.45 * (p === 0 ? 1.0 : 0.4);
+              b.rotation.z = -0.40 * (p === 0 ? 1.0 : 0.6);
+            } else if (curlR > 0.70) {
+              // Closed S-Fist: Thumb wraps across folded fingers
+              b.rotation.x = -0.55 * (p === 0 ? 1.0 : 0.7);
+              b.rotation.y = -0.15 * (p === 0 ? 1.0 : 0.5);
+              b.rotation.z = -0.75 * (p === 0 ? 1.0 : 0.7);
+            } else {
+              // Relaxed Resting Thumb (natural drape)
+              const t = (curlR - 0.25) / 0.45;
+              b.rotation.x = (-0.35 + (-0.55 - -0.35) * t) * (p === 0 ? 1.0 : 0.6);
+              b.rotation.y = (0.45 + (-0.15 - 0.45) * t) * (p === 0 ? 1.0 : 0.4);
+              b.rotation.z = (-0.40 + (-0.75 - -0.40) * t) * (p === 0 ? 1.0 : 0.6);
+            }
           } else {
             const flex = (phalanxFlex[p] ?? 1.1) * curlR;
+            b.rotation.x = 0;
             b.rotation.z = -flex;
-            b.rotation.y = (f - 2) * -spreadR * 0.2 * (p === 0 ? 1 : 0.3);
+            // Anti-starfish finger convergence when flat; spread only when explicitly commanded
+            if (spreadR > 0.1) {
+              b.rotation.y = (f - 2) * -spreadR * 0.25 * (p === 0 ? 1.0 : 0.3);
+            } else {
+              b.rotation.y = (f - 2) * -0.07 * (1.0 - Math.min(1.0, curlR * 1.2)) * (p === 0 ? 1.0 : 0.4);
+            }
           }
         }
       }

@@ -57,6 +57,8 @@ export interface SignKeyframe {
   torso?: TorsoPoseTarget;
   /** Optional caption or linguistic marker at this exact moment */
   annotation?: string;
+  /** Active sub-word gloss during continuous multi-word sentence playback */
+  activeGloss?: string;
 }
 
 export interface SignClip {

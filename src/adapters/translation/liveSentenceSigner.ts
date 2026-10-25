@@ -621,6 +621,7 @@ export class LiveSentenceSigner {
           const ratio = baseDuration > 0 ? kf.timeMs / baseDuration : 0;
           continuousKeyframes.push({
             ...kf,
+            activeGloss: w.islGloss,
             timeMs: Math.round(ratio * extendedDuration),
             face: {
               mouthState: kf.face?.mouthState || (grammar.isNegated ? 'tight-lips' : 'neutral'),
@@ -667,6 +668,7 @@ export class LiveSentenceSigner {
           const rel = (kf.timeMs - activeOrigin) * timeScale;
           continuousKeyframes.push({
             ...kf,
+            activeGloss: w.islGloss,
             timeMs: Math.round(wordStart + rel),
             face: {
               mouthState: kf.face?.mouthState || (grammar.isNegated ? 'tight-lips' : 'neutral'),
