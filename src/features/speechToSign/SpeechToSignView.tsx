@@ -271,7 +271,7 @@ export const SpeechToSignView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 space-y-5">
+    <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4 space-y-4">
       {/* Executive Studio Header & Language Selection */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/90">
         <div>
@@ -321,10 +321,10 @@ export const SpeechToSignView: React.FC = () => {
         </div>
       </div>
 
-      {/* Responsive Studio 3.0 Dual-Pane Layout: Left 3D Viewport & Prompter, Right Command Console */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left Pane: 3D Sign Avatar Stage & Live Teleprompter (7 cols on desktop) */}
-        <div className="lg:col-span-7 space-y-4">
+      {/* Responsive Studio Dual-Pane Layout: Left 3D Viewport & Prompter, Right Command Console */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-12 gap-5 items-start">
+        {/* Left Pane: 3D Sign Avatar Stage & Live Teleprompter (7 cols on lg/xl, 8 on 2xl) */}
+        <div className="lg:col-span-7 xl:col-span-7 2xl:col-span-8 space-y-4">
           {/* Avatar Stage with Real-Time Time Tracking & Preset Controls */}
           <AvatarStage
             clip={activeClip}
@@ -406,8 +406,8 @@ export const SpeechToSignView: React.FC = () => {
           )}
         </div>
 
-        {/* Right Pane: Command Console & Linguistic Coverage (5 cols on desktop) */}
-        <div className="lg:col-span-5 space-y-4">
+        {/* Right Pane: Command Console & Linguistic Coverage (5 cols on lg/xl, 4 on 2xl) */}
+        <div className="lg:col-span-5 xl:col-span-5 2xl:col-span-4 space-y-4">
           {/* Input Control Box */}
           <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-3.5">
             <form

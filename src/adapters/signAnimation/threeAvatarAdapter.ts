@@ -10,7 +10,7 @@ export interface AvatarOptions {
   visualStyle?: VisualStyle;
 }
 
-export type CameraPreset = 'CHEST_SIGNING' | 'HANDS_FOCUS' | 'FACE_NMM' | 'DIAGONAL_45' | 'FREE_ORBIT';
+export type CameraPreset = 'CHEST_SIGNING' | 'FULL_BODY' | 'HANDS_FOCUS' | 'FACE_NMM' | 'DIAGONAL_45' | 'FREE_ORBIT';
 
 interface FingerRig {
   baseGroup: THREE.Group;
@@ -649,6 +649,11 @@ export class ThreeAvatarRig {
         this.camera.lookAt(0, 0.38, 0);
         this.zoomDistance = 1.85;
         break;
+      case 'FULL_BODY':
+        this.camera.position.set(0, 0.40, 2.95);
+        this.camera.lookAt(0, 0.36, 0);
+        this.zoomDistance = 2.95;
+        break;
       case 'HANDS_FOCUS':
         this.camera.position.set(0, 0.28, 1.25);
         this.camera.lookAt(0, 0.24, 0);
@@ -1044,7 +1049,20 @@ export class ThreeAvatarRig {
     if (this.disposed) return;
     const width = this.container.clientWidth || 360;
     const height = this.container.clientHeight || 420;
-    this.camera.aspect = width / height;
+    const aspect = width / height;
+    this.camera.aspect = aspect;
+
+    // Adaptive FOV: prevent horizontal arm clipping when aspect ratio is narrow (< 1.0)
+    const baseFov = 38;
+    if (aspect < 1.0) {
+      const radFov = (baseFov * Math.PI) / 180;
+      const hFov = 2 * Math.atan(Math.tan(radFov / 2) * (4 / 3));
+      const targetFov = 2 * Math.atan(Math.tan(hFov / 2) / aspect) * (180 / Math.PI);
+      this.camera.fov = Math.min(58, Math.max(baseFov, targetFov));
+    } else {
+      this.camera.fov = baseFov;
+    }
+
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
     this.render();

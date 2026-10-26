@@ -38,7 +38,7 @@ export const App: React.FC = () => {
         <Navbar />
 
         {/* Main Content Area */}
-        <main id="main-content" className="flex-1 pb-24 outline-none" tabIndex={-1}>
+        <main id="main-content" className="flex-1 pb-20 md:pb-6 outline-none" tabIndex={-1}>
           <Routes>
             <Route path="/" element={<HomeView />} />
             <Route path="/speech-to-sign" element={<SpeechToSignView />} />

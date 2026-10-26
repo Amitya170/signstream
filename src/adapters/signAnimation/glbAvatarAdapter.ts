@@ -433,6 +433,10 @@ export class GlbAvatarRig {
         this.camera.position.set(0, cy + 0.04, this.zoomDistance);
         this.camera.lookAt(0, cy - 0.04, 0);
         break;
+      case 'FULL_BODY':
+        this.camera.position.set(0, cy - 0.02, this.zoomDistance * 2.1);
+        this.camera.lookAt(0, cy - 0.26, 0);
+        break;
       case 'HANDS_FOCUS':
         this.camera.position.set(0, cy - 0.14, this.zoomDistance * 0.72);
         this.camera.lookAt(0, cy - 0.16, 0);
@@ -1277,7 +1281,20 @@ export class GlbAvatarRig {
     if (this.disposed) return;
     const width = this.container.clientWidth || 360;
     const height = this.container.clientHeight || 420;
-    this.camera.aspect = width / height;
+    const aspect = width / height;
+    this.camera.aspect = aspect;
+
+    // Adaptive FOV: widen FOV when aspect ratio is narrow (< 1.0) to prevent clipping arms and hands
+    const baseFov = 34;
+    if (aspect < 1.0) {
+      const radFov = (baseFov * Math.PI) / 180;
+      const hFov = 2 * Math.atan(Math.tan(radFov / 2) * (4 / 3));
+      const targetFov = 2 * Math.atan(Math.tan(hFov / 2) / aspect) * (180 / Math.PI);
+      this.camera.fov = Math.min(56, Math.max(baseFov, targetFov));
+    } else {
+      this.camera.fov = baseFov;
+    }
+
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
     this.render();
